@@ -108,7 +108,7 @@ describe('LlamaCppServerManager', () => {
   it('kills the child and fails when startup times out', async () => {
     let now = 0;
     const harness = createDependencies({
-      responses: [new Response(null, { status: 503 })],
+      responses: [new Response(null, { status: 503 }), new Response(null, { status: 503 })],
       now: () => now,
       sleep: async (ms) => {
         now += ms;
