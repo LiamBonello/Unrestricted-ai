@@ -3,13 +3,15 @@
 Date: 2026-09-17
 Repository: `LiamBonello/Unrestricted-ai`
 Branch policy: `main` only
-Status: Design for review before implementation
+Status: Approved for implementation
 
 ## 1. Product goal
 
 Unrestricted AI is a private, single-user, local-first AI assistant that presents one coherent interface while routing work to specialised local models behind the scenes.
 
-The product should feel like one assistant, not a collection of model dashboards. A user asks for chat, coding, reasoning, image generation/editing, or video generation in the same conversation; the orchestration layer decides which capability handles the request and preserves conversational context across capability changes.
+The product should feel like one assistant, not a collection of model dashboards. A user asks for chat, reasoning, writing, image generation/editing, or video generation in the same conversation; the orchestration layer decides which capability handles the request and preserves conversational context across capability changes.
+
+Coding-specific functionality is out of scope for v1. It can be reconsidered later without changing the core provider architecture.
 
 The platform is intentionally designed to avoid ongoing per-token, per-message, or per-generation API fees. Core inference runs locally using open-source or open-weight models. External paid APIs are not part of the required architecture.
 
@@ -106,7 +108,7 @@ Orchestrator API
    |      +--> LLM Provider ----> llama.cpp / compatible local server
    |      +--> Image Provider --> ComfyUI workflows
    |      +--> Video Provider --> ComfyUI / dedicated video runtime
-   |      +--> Tool Provider ---> filesystem / web / code / future tools
+   |      +--> Tool Provider ---> filesystem / web / future tools
    |
    +--> Local Persistence
           +--> SQLite metadata
@@ -131,7 +133,7 @@ The UI is ChatGPT-style but should not clone ChatGPT visually. V1 needs:
 - conversation list
 - message stream
 - streaming text
-- code blocks
+- rich Markdown rendering
 - image attachments
 - generated image rendering
 - generated video rendering
@@ -155,7 +157,7 @@ Initial model candidate: Qwen3.5-9B in an appropriate GGUF quantization, with Qw
 
 Reasons:
 
-- strong general/coding/reasoning capability for the hardware class
+- strong general, reasoning, and writing capability for the hardware class
 - Apache 2.0 model licence for current Qwen3.5 9B/4B releases
 - GGUF support enables aggressive quantization
 - llama.cpp supports local operation and GPU/CPU split strategies
@@ -180,16 +182,16 @@ ComfyUI is the preferred initial execution layer because its workflow API and me
 
 Video is a first-class architectural capability but not the first implementation milestone.
 
-V1 provider interface must be capable of supporting:
+V1 video capability is deliberately limited to:
 
 - text-to-video
 - image-to-video
-- later: video-to-video
-- later: extension/interpolation/upscaling
+
+Video-to-video, video extension, interpolation, and other video-editing workflows are out of scope.
 
 The concrete initial model is deliberately not frozen in this design. Current high-quality open video models are substantially heavier than the user's 8 GB VRAM budget, and low-VRAM operation often depends on quantized/community workflows that change rapidly.
 
-The video milestone therefore begins with a hardware benchmark against then-current candidates (for example LTX-family or Wan-family low-VRAM workflows) and chooses the best usable model at implementation time.
+The video milestone therefore begins with a hardware benchmark against then-current candidates, for example LTX-family or Wan-family low-VRAM workflows, and chooses the best usable model at implementation time.
 
 The architecture must allow swapping the model later without changing conversation/UI code.
 
@@ -214,7 +216,7 @@ Examples:
 - "Generate an image of..." -> image
 - "Edit this image..." + image attachment -> image editing
 - "Animate this" + prior generated image -> image-to-video
-- normal question/code request -> LLM
+- normal question, reasoning, or writing request -> LLM
 
 Do not use a heavy LLM call merely to route every obvious request.
 
@@ -225,7 +227,6 @@ Conversation state must be provider-independent.
 A message can contain ordered content parts such as:
 
 - text
-- code
 - image input
 - image output
 - video input
@@ -349,10 +350,10 @@ Acceptance: application starts locally, a conversation persists across restart, 
 - streaming generation
 - cancellation
 - context construction
-- coding/markdown rendering
+- Markdown rendering
 - hardware benchmark/config profile
 
-Acceptance: normal chat/coding works fully offline with no paid API.
+Acceptance: normal chat, reasoning, and writing work fully offline with no paid API.
 
 ### Milestone 3 — Images
 
@@ -379,11 +380,11 @@ Acceptance: text and image requests can be mixed in one conversation while GPU o
 
 - benchmark current low-VRAM video candidates
 - select initial local profile
-- text-to-video where practical
+- text-to-video
 - image-to-video
 - video asset rendering/history
 
-Acceptance: at least one useful local video workflow runs on the RTX 3070 Ti without external paid inference.
+Acceptance: text-to-video and image-to-video run locally on the RTX 3070 Ti without external paid inference at settings proven usable by benchmark.
 
 ### Milestone 6+ — tools, research, voice, agents, computer control
 
@@ -406,6 +407,8 @@ CI should not attempt to download or run multi-gigabyte models.
 
 Do not add these during the initial foundation:
 
+- coding-specific assistant features
+- video-to-video or video editing
 - user accounts
 - subscriptions/billing
 - cloud deployment
@@ -438,6 +441,6 @@ Do not add these during the initial foundation:
 - The active model/cache directory has sufficient free space on the 980 PRO.
 - Qwen3.5-9B GGUF offers acceptable latency/quality on the 3070 Ti + 12900K; if not, the 4B profile becomes the default.
 - FLUX.2 Klein 4B is usable at the target resolutions under the selected ComfyUI memory profile.
-- A useful video model/workflow can be made stable enough on 8 GB VRAM; otherwise the provider remains architecturally present while the hardware profile documents the practical limitation.
+- A useful text-to-video and image-to-video model/workflow can be made stable enough on 8 GB VRAM; otherwise the provider remains architecturally present while the hardware profile documents the practical limitation.
 
 These are benchmark questions, not reasons to redesign the application.
