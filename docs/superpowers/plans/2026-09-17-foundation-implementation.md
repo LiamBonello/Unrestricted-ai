@@ -1,106 +1,88 @@
 # Unrestricted AI Foundation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Because this repository is explicitly `main`-only, do not create a worktree, feature branch, or pull-request branch while executing this plan.
 
-**Goal:** Build the first local-only vertical slice of Unrestricted AI: a persistent ChatGPT-style shell that streams a mock local assistant through the same provider, orchestration, resource-management, API, and persistence boundaries that later real models will use.
+**Goal:** Build the first local-only vertical slice of Unrestricted AI: a persistent ChatGPT-style shell that streams a mock local assistant through the same provider, orchestration, resource-management, API, and persistence boundaries that later real local models will use.
 
-**Architecture:** Use one Next.js App Router application with server-only TypeScript modules for persistence and orchestration. The browser talks only to local Next.js route handlers; those route handlers call a provider-independent `ChatOrchestrator`, which serializes heavy capability access through a `ResourceManager`, streams from an `LLMProvider`, and persists conversations/messages to SQLite. No real model is downloaded in this milestone.
+**Architecture:** Use one Next.js App Router application. React components call local route handlers only; route handlers call a provider-independent `ChatOrchestrator`; the orchestrator persists messages through a conversation service, obtains exclusive heavy-resource access from a `ResourceManager`, and streams from an `LLMProvider`. SQLite stores metadata and conversation history; no real model is downloaded in this milestone.
 
-**Tech Stack:** Node.js 24 LTS, Next.js 16.3.3, React 19.3.0, TypeScript strict mode, Material UI 9.4.0, `@mui/material-nextjs` 9.4.0, SQLite through `better-sqlite3` 13.0.3, Vitest 5.0.1, React Testing Library 16.3.3.
+**Tech Stack:** Node.js 24 LTS, Next.js 16.3.3, React 19.3.0, TypeScript strict mode, Material UI 9.4.0, `@mui/material-nextjs` 9.4.0, `better-sqlite3` 13.0.3, Vitest 5.0.1, React Testing Library 16.3.3.
 
 **Spec:** `docs/superpowers/specs/2026-09-17-unrestricted-ai-v1-design.md`
 
 ## Global Constraints
 
-- Work directly on `main`; do not create feature branches, PR branches, or worktrees.
-- V1 runs locally on Windows and binds application services to localhost by default.
-- Node.js baseline is Node 24 LTS; do not target Node 20 because it is EOL as of this plan date.
-- Use Next.js 16.3.3 Active LTS rather than an older maintenance branch.
-- Use Material UI 9.4.0 stable APIs only; prefer `Box`, `Stack`, `Typography`, and `sx`; do not use deprecated MUI APIs.
-- TypeScript stays strict. Do not introduce `any`.
-- Coding-specific assistant features are out of scope.
-- Video is out of scope for this milestone; the future video provider supports text-to-video and image-to-video only.
-- No paid AI API, authentication, billing, public hosting, cloud database, or multi-user scheduling.
-- No model weights, generated assets, local databases, secrets, or machine-specific paths may be committed.
-- The normal UI says `Unrestricted AI`; concrete provider/model names belong only in future diagnostics/settings.
-- Keep provider/runtime details out of React UI components.
+- Work directly on `main`; never create another branch, PR branch, or worktree.
+- Run v1 locally on Windows; app processes bind to `127.0.0.1` by default.
+- Use Node.js 24 LTS. Node.js 20 is EOL and must not be selected for this new project.
+- Use Next.js 16.3.3 Active LTS and Material UI 9.4.0 stable APIs.
+- Prefer MUI `Box`, `Stack`, `Typography`, `sx`, and theme values. Do not use deprecated MUI APIs.
+- TypeScript remains strict. Do not use `any` or widen API/domain types unnecessarily.
+- Coding-specific assistant functionality is out of scope.
+- Video is out of scope for this milestone. Future `VideoProvider` supports text-to-video and image-to-video only; no video-to-video API is permitted.
+- Do not introduce authentication, billing, cloud deployment, public API hosting, paid AI APIs, cloud databases, or multi-user scheduling.
+- Never commit model weights, generated assets, local databases, secrets, caches, or hard-coded machine-specific drive paths.
+- UI says `Unrestricted AI`; concrete runtime/model names remain implementation details.
+- API/storage row transformations live in server mapping modules, not React components.
 
----
-
-## File Structure
-
-The foundation should finish with these responsibilities:
+## Target File Map
 
 ```text
-.env.example                         documented local paths
-.gitignore                           excludes local AI/data artifacts
-.nvmrc                               Node 24 LTS major
-package.json                         app/test/migration scripts and pinned core deps
-next.config.ts                       server external package configuration
-vitest.config.ts                     unit/component test configuration
-vitest.setup.ts                      Testing Library DOM matchers
+.env.example
+.gitignore
+.nvmrc
+package.json
+next.config.ts
+tsconfig.json
+eslint.config.mjs
+vitest.config.ts
+vitest.setup.ts
 
-src/app/layout.tsx                   MUI/HTML root
-src/app/page.tsx                     server entry for chat shell
-src/app/api/health/route.ts          localhost health check
-src/app/api/conversations/route.ts   list/create conversations
-src/app/api/conversations/[id]/route.ts fetch one conversation and messages
-src/app/api/chat/route.ts            NDJSON streaming chat endpoint
+src/app/layout.tsx
+src/app/page.tsx
+src/app/api/health/route.ts
+src/app/api/conversations/route.ts
+src/app/api/conversations/[id]/route.ts
+src/app/api/chat/route.ts
 
-src/theme/theme.ts                   app theme
-src/theme/AppThemeProvider.tsx       MUI Next.js cache + ThemeProvider
+src/theme/theme.ts
+src/theme/AppThemeProvider.tsx
 
-src/server/config/paths.ts           machine-independent data path resolution
-src/server/db/database.ts            SQLite connection factory
-src/server/db/migrations/types.ts    migration contract
-src/server/db/migrations/0001-initial.ts initial schema
-src/server/db/migrate.ts             idempotent migration runner
-src/server/db/migrate-cli.ts         explicit migration command
+src/shared/conversation.ts
+src/shared/chat.ts
 
-src/server/conversations/types.ts    provider-independent conversation domain types
-src/server/conversations/repository.ts SQLite persistence mapping
-src/server/conversations/service.ts  IDs/timestamps/domain operations
+src/server/config/paths.ts
+src/server/db/database.ts
+src/server/db/migrations/types.ts
+src/server/db/migrations/0001-initial.ts
+src/server/db/migrate.ts
+src/server/db/migrate-cli.ts
+src/server/conversations/repository.ts
+src/server/conversations/service.ts
+src/server/providers/types.ts
+src/server/providers/mock-llm-provider.ts
+src/server/resources/resource-manager.ts
+src/server/chat/chat-orchestrator.ts
+src/server/chat/ndjson.ts
+src/server/app-container.ts
 
-src/server/providers/types.ts        LLM/Image/Video provider contracts
-src/server/providers/mock-llm-provider.ts streaming foundation provider
-src/server/resources/resource-manager.ts single-heavy-workload queue
-src/server/chat/types.ts             API/orchestrator stream event types
-src/server/chat/chat-orchestrator.ts conversation + provider coordination
-src/server/app-container.ts          singleton server composition root
-
-src/features/chat/api/chat-stream.ts browser NDJSON client/parser
-src/features/chat/components/ChatClient.tsx stateful chat controller
-src/features/chat/components/ConversationSidebar.tsx conversation navigation
-src/features/chat/components/MessageList.tsx message rendering
-src/features/chat/components/Composer.tsx input/send/stop controls
-src/features/chat/components/ChatShell.tsx responsive MUI layout
+src/features/chat/api/chat-api.ts
+src/features/chat/components/Composer.tsx
+src/features/chat/components/MessageList.tsx
+src/features/chat/components/ConversationSidebar.tsx
+src/features/chat/components/ChatShell.tsx
+src/features/chat/components/ChatClient.tsx
 ```
 
-Tests live beside their unit where practical using `*.test.ts` / `*.test.tsx`.
+Tests live beside their unit using `*.test.ts` / `*.test.tsx`.
 
 ---
 
-### Task 1: Bootstrap the local Next.js + MUI application
+### Task 1: Bootstrap Next.js, strict TypeScript, tests, and MUI
 
-**Files:**
-- Create: `package.json`
-- Create: `.nvmrc`
-- Create: `.env.example`
-- Create/Modify: `.gitignore`
-- Create: `tsconfig.json`
-- Create: `next-env.d.ts`
-- Create: `next.config.ts`
-- Create: `eslint.config.mjs`
-- Create: `vitest.config.ts`
-- Create: `vitest.setup.ts`
-- Create: `src/theme/theme.ts`
-- Create: `src/theme/theme.test.ts`
-- Create: `src/theme/AppThemeProvider.tsx`
-- Create: `src/app/layout.tsx`
-- Create: `src/app/page.tsx`
+**Files:** root config files, `src/theme/*`, `src/app/layout.tsx`, `src/app/page.tsx`
 
-**Interfaces:**
-- Produces: a runnable Next.js App Router application, MUI theme, strict TypeScript/test environment, and local-data ignore policy used by every later task.
+**Produces:** a runnable localhost-only Next.js shell with stable MUI integration and a green unit-test/build toolchain.
 
 - [ ] **Step 1: Write the failing theme test**
 
@@ -111,16 +93,16 @@ import { describe, expect, it } from 'vitest';
 import { theme } from './theme';
 
 describe('theme', () => {
-  it('uses the Unrestricted AI dark application baseline', () => {
+  it('uses the Unrestricted AI dark baseline', () => {
     expect(theme.palette.mode).toBe('dark');
     expect(theme.typography.fontFamily).toContain('Segoe UI');
   });
 });
 ```
 
-- [ ] **Step 2: Add the project manifests and install dependencies**
+- [ ] **Step 2: Create `package.json` and local-artifact configuration**
 
-Create `package.json` with these core versions:
+Use exactly this initial manifest:
 
 ```json
 {
@@ -168,12 +150,6 @@ Create `package.json` with these core versions:
 }
 ```
 
-Then run:
-
-```bash
-npm install
-```
-
 Create `.nvmrc`:
 
 ```text
@@ -188,7 +164,7 @@ UNRESTRICTED_AI_MODELS_DIR=./models
 UNRESTRICTED_AI_OUTPUTS_DIR=./outputs
 ```
 
-Ensure `.gitignore` contains:
+Create/merge `.gitignore`:
 
 ```gitignore
 node_modules/
@@ -210,9 +186,48 @@ data/*.db-*
 *.pth
 ```
 
-- [ ] **Step 3: Add strict TypeScript, Next.js, ESLint, and Vitest configuration**
+Run:
 
-`next.config.ts` must keep the SQLite native module server-side:
+```bash
+npm install
+```
+
+- [ ] **Step 3: Create exact framework/test configuration**
+
+`tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+`next-env.d.ts`:
+
+```ts
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+```
+
+`next.config.ts`:
 
 ```ts
 import type { NextConfig } from 'next';
@@ -224,11 +239,21 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
+`eslint.config.mjs`:
+
+```js
+import { defineConfig } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
+
+export default defineConfig([...nextVitals, ...nextTs]);
+```
+
 `vitest.config.ts`:
 
 ```ts
-import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -250,19 +275,15 @@ export default defineConfig({
 import '@testing-library/jest-dom/vitest';
 ```
 
-Use Next.js strict defaults in `tsconfig.json` and keep `strict: true`, `noEmit: true`, and alias `@/* -> ./src/*`.
-
-- [ ] **Step 4: Run the test and verify it fails**
-
-Run:
+- [ ] **Step 4: Run the theme test and confirm RED**
 
 ```bash
 npm test -- src/theme/theme.test.ts
 ```
 
-Expected: FAIL because `src/theme/theme.ts` does not exist.
+Expected: FAIL because `theme.ts` does not exist.
 
-- [ ] **Step 5: Implement the MUI theme and root integration**
+- [ ] **Step 5: Implement the theme and root shell**
 
 `src/theme/theme.ts`:
 
@@ -274,14 +295,19 @@ import { createTheme } from '@mui/material/styles';
 export const theme = createTheme({
   palette: {
     mode: 'dark',
-    background: {
-      default: '#0b0d10',
-      paper: '#12161b',
-    },
+    background: { default: '#0b0d10', paper: '#12161b' },
   },
   shape: { borderRadius: 12 },
   typography: {
     fontFamily: '"Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        'html, body': { minHeight: '100%' },
+        body: { margin: 0 },
+      },
+    },
   },
 });
 ```
@@ -309,64 +335,82 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
 }
 ```
 
-`src/app/layout.tsx` should wrap children in `AppThemeProvider`, set metadata title to `Unrestricted AI`, and avoid remote web fonts so the local app remains buildable without a font CDN.
+`src/app/layout.tsx`:
 
-`src/app/page.tsx` initially renders a centered `Typography` heading `Unrestricted AI` and will be replaced by `ChatShell` in Task 7.
+```tsx
+import type { Metadata } from 'next';
+import type { PropsWithChildren } from 'react';
+import { AppThemeProvider } from '@/theme/AppThemeProvider';
 
-- [ ] **Step 6: Verify the bootstrap**
+export const metadata: Metadata = {
+  title: 'Unrestricted AI',
+  description: 'Local-first personal AI assistant',
+};
 
-Run:
+export default function RootLayout({ children }: PropsWithChildren) {
+  return (
+    <html lang="en">
+      <body>
+        <AppThemeProvider>{children}</AppThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+`src/app/page.tsx`:
+
+```tsx
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+
+export default function HomePage() {
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+      <Typography variant="h3">Unrestricted AI</Typography>
+    </Box>
+  );
+}
+```
+
+- [ ] **Step 6: Verify GREEN and commit**
 
 ```bash
 npm test -- src/theme/theme.test.ts
 npm run typecheck
 npm run lint
 npm run build
-```
-
-Expected: all pass.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add package.json package-lock.json .nvmrc .env.example .gitignore tsconfig.json next-env.d.ts next.config.ts eslint.config.mjs vitest.config.ts vitest.setup.ts src/app src/theme
+git add package.json package-lock.json .nvmrc .env.example .gitignore tsconfig.json next-env.d.ts next.config.ts eslint.config.mjs vitest.config.ts vitest.setup.ts src/theme src/app
 git commit -m "chore: bootstrap local Unrestricted AI app"
 ```
 
 ---
 
-### Task 2: Add SQLite connection and idempotent migrations
+### Task 2: Add SQLite and idempotent migrations
 
-**Files:**
-- Create: `src/server/config/paths.ts`
-- Create: `src/server/db/database.ts`
-- Create: `src/server/db/migrations/types.ts`
-- Create: `src/server/db/migrations/0001-initial.ts`
-- Create: `src/server/db/migrate.ts`
-- Create: `src/server/db/migrate.test.ts`
-- Create: `src/server/db/migrate-cli.ts`
+**Files:** `src/server/config/paths.ts`, `src/server/db/**`
 
-**Interfaces:**
-- Produces: `createDatabase(filename: string): Database.Database`
-- Produces: `runMigrations(db: Database.Database): void`
-- Produces: `getDataPaths(): { dataDir: string; databaseFile: string; modelsDir: string; outputsDir: string }`
+**Produces:** `createDatabase`, `runMigrations`, and configurable local data/model/output paths.
 
 - [ ] **Step 1: Write the failing migration test**
 
 `src/server/db/migrate.test.ts`:
 
 ```ts
-import { afterEach, describe, expect, it } from 'vitest';
 import type Database from 'better-sqlite3';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase } from './database';
 import { runMigrations } from './migrate';
 
 let db: Database.Database | undefined;
 
-afterEach(() => db?.close());
+afterEach(() => {
+  db?.close();
+  db = undefined;
+});
 
 describe('runMigrations', () => {
-  it('creates the foundation schema and is idempotent', () => {
+  it('creates the schema once', () => {
     db = createDatabase(':memory:');
     runMigrations(db);
     runMigrations(db);
@@ -379,23 +423,21 @@ describe('runMigrations', () => {
       expect.arrayContaining(['schema_migrations', 'conversations', 'messages']),
     );
 
-    const applied = db.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get() as { count: number };
-    expect(applied.count).toBe(1);
+    const row = db.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get() as { count: number };
+    expect(row.count).toBe(1);
   });
 });
 ```
 
-- [ ] **Step 2: Run it to verify failure**
+- [ ] **Step 2: Run and confirm RED**
 
 ```bash
 npm test -- src/server/db/migrate.test.ts
 ```
 
-Expected: FAIL because database modules do not exist.
+- [ ] **Step 3: Implement paths and DB factory**
 
-- [ ] **Step 3: Implement path resolution and database creation**
-
-`src/server/config/paths.ts` must resolve configured paths relative to `process.cwd()` and never expose Windows-specific drive letters in source:
+`src/server/config/paths.ts`:
 
 ```ts
 import path from 'node:path';
@@ -428,7 +470,7 @@ export function createDatabase(filename: string): Database.Database {
 }
 ```
 
-- [ ] **Step 4: Implement the migration contract and initial schema**
+- [ ] **Step 4: Implement exact migration definitions and runner**
 
 `src/server/db/migrations/types.ts`:
 
@@ -440,7 +482,7 @@ export interface Migration {
 }
 ```
 
-`0001-initial.ts` creates `conversations` and `messages`. Store message content as JSON text (`parts_json`) so later image/video parts can be added without changing this storage shape:
+`src/server/db/migrations/0001-initial.ts`:
 
 ```ts
 import type { Migration } from './types';
@@ -465,74 +507,106 @@ export const initialMigration: Migration = {
     );
 
     CREATE INDEX messages_conversation_created_idx
-      ON messages(conversation_id, created_at);
+      ON messages(conversation_id, created_at, id);
   `,
 };
 ```
 
-`runMigrations` creates `schema_migrations`, applies unapplied migrations inside transactions, and records each version only after successful SQL execution.
+`src/server/db/migrate.ts`:
 
-- [ ] **Step 5: Add the explicit CLI migration entry**
+```ts
+import type Database from 'better-sqlite3';
+import { initialMigration } from './migrations/0001-initial';
+import type { Migration } from './migrations/types';
 
-`migrate-cli.ts` must create `dataDir` recursively before opening the DB, run migrations, close the connection, and print only the resolved database path and success state. Do not print secrets/environment dumps.
+const migrations: readonly Migration[] = [initialMigration];
 
-- [ ] **Step 6: Verify database behavior**
+export function runMigrations(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      applied_at TEXT NOT NULL
+    );
+  `);
+
+  const appliedRows = db.prepare('SELECT version FROM schema_migrations').all() as Array<{ version: number }>;
+  const applied = new Set(appliedRows.map(({ version }) => version));
+  const insert = db.prepare(
+    'INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)',
+  );
+
+  const apply = db.transaction((migration: Migration) => {
+    db.exec(migration.sql);
+    insert.run(migration.version, migration.name, new Date().toISOString());
+  });
+
+  for (const migration of migrations) {
+    if (!applied.has(migration.version)) apply(migration);
+  }
+}
+```
+
+`src/server/db/migrate-cli.ts`:
+
+```ts
+import { mkdirSync } from 'node:fs';
+import { getDataPaths } from '@/server/config/paths';
+import { createDatabase } from './database';
+import { runMigrations } from './migrate';
+
+const paths = getDataPaths();
+mkdirSync(paths.dataDir, { recursive: true });
+const db = createDatabase(paths.databaseFile);
+
+try {
+  runMigrations(db);
+  console.log(`Migrated ${paths.databaseFile}`);
+} finally {
+  db.close();
+}
+```
+
+- [ ] **Step 5: Verify GREEN and commit**
 
 ```bash
 npm test -- src/server/db/migrate.test.ts
 npm run typecheck
 npm run db:migrate
-```
-
-Expected: test PASS; local `data/unrestricted-ai.db` is created and is ignored by Git.
-
-- [ ] **Step 7: Commit**
-
-```bash
 git add src/server/config src/server/db
- git commit -m "feat: add local SQLite persistence foundation"
+git commit -m "feat: add local SQLite persistence foundation"
 ```
 
 ---
 
-### Task 3: Implement the conversation domain and persistence mapping
+### Task 3: Add typed conversation domain, repository, and service
 
-**Files:**
-- Create: `src/server/conversations/types.ts`
-- Create: `src/server/conversations/repository.ts`
-- Create: `src/server/conversations/repository.test.ts`
-- Create: `src/server/conversations/service.ts`
-- Create: `src/server/conversations/service.test.ts`
+**Files:** `src/shared/conversation.ts`, `src/server/conversations/repository.ts`, `src/server/conversations/service.ts`, colocated tests.
 
-**Interfaces:**
-- Produces: `Conversation`, `Message`, `TextPart`, `MessageRole`
-- Produces: `ConversationRepository`
-- Produces: `ConversationService.createConversation(title?)`, `listConversations()`, `getConversation(id)`, `appendTextMessage(conversationId, role, text)`
+**Produces:** typed conversation/message APIs. SQL row/JSON mapping stays inside the repository.
 
-- [ ] **Step 1: Write repository round-trip tests**
+- [ ] **Step 1: Write the failing repository/service tests**
 
-Test that a conversation and two text messages survive a repository read and that `parts_json` is mapped back to typed `TextPart[]`, not exposed to UI as raw JSON.
-
-Representative assertion:
+`src/server/conversations/repository.test.ts` must initialize an in-memory migrated DB, insert a conversation and two messages, then assert:
 
 ```ts
-expect(result.messages).toEqual([
+expect(repository.getConversation('c1')?.messages).toEqual([
   expect.objectContaining({ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }),
   expect.objectContaining({ role: 'assistant', parts: [{ type: 'text', text: 'Hi' }] }),
 ]);
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+`src/server/conversations/service.test.ts` must assert whitespace-only messages throw and valid messages receive IDs/timestamps.
+
+Run and confirm RED:
 
 ```bash
 npm test -- src/server/conversations
 ```
 
-Expected: FAIL because conversation modules do not exist.
+- [ ] **Step 2: Define exact shared domain types**
 
-- [ ] **Step 3: Define strict domain types**
-
-`types.ts`:
+`src/shared/conversation.ts`:
 
 ```ts
 export type MessageRole = 'user' | 'assistant';
@@ -564,64 +638,210 @@ export interface Conversation extends ConversationSummary {
 }
 ```
 
-Keep `MessagePart` as a union even though v1 currently has only text; later image/video milestones extend the union in the mapping layer.
+- [ ] **Step 3: Implement the repository mapping layer**
 
-- [ ] **Step 4: Implement the repository mapping layer**
-
-`ConversationRepository` accepts `Database.Database` in its constructor. All SQL row shapes remain private to this file. Parse JSON defensively and throw a descriptive persistence error if stored parts are malformed; do not leak database rows into UI types.
-
-Required methods:
+`src/server/conversations/repository.ts`:
 
 ```ts
-createConversation(conversation: ConversationSummary): void
-listConversations(): ConversationSummary[]
-getConversation(id: string): Conversation | null
-insertMessage(message: Message): void
-touchConversation(id: string, updatedAt: string): void
+import type Database from 'better-sqlite3';
+import type {
+  Conversation,
+  ConversationSummary,
+  Message,
+  MessagePart,
+  MessageRole,
+  TextPart,
+} from '@/shared/conversation';
+
+interface ConversationRow {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MessageRow {
+  id: string;
+  conversation_id: string;
+  role: MessageRole;
+  parts_json: string;
+  created_at: string;
+}
+
+function isTextPart(value: unknown): value is TextPart {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return candidate.type === 'text' && typeof candidate.text === 'string';
+}
+
+function parseParts(value: string): MessagePart[] {
+  const parsed: unknown = JSON.parse(value);
+  if (!Array.isArray(parsed) || !parsed.every(isTextPart)) {
+    throw new Error('Stored message parts are invalid');
+  }
+  return parsed;
+}
+
+function mapConversation(row: ConversationRow): ConversationSummary {
+  return {
+    id: row.id,
+    title: row.title,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapMessage(row: MessageRow): Message {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    role: row.role,
+    parts: parseParts(row.parts_json),
+    createdAt: row.created_at,
+  };
+}
+
+export class ConversationRepository {
+  constructor(private readonly db: Database.Database) {}
+
+  createConversation(conversation: ConversationSummary): void {
+    this.db
+      .prepare(`
+        INSERT INTO conversations (id, title, created_at, updated_at)
+        VALUES (@id, @title, @createdAt, @updatedAt)
+      `)
+      .run(conversation);
+  }
+
+  listConversations(): ConversationSummary[] {
+    const rows = this.db
+      .prepare(`
+        SELECT id, title, created_at, updated_at
+        FROM conversations
+        ORDER BY updated_at DESC, id DESC
+      `)
+      .all() as ConversationRow[];
+    return rows.map(mapConversation);
+  }
+
+  getConversation(id: string): Conversation | null {
+    const row = this.db
+      .prepare('SELECT id, title, created_at, updated_at FROM conversations WHERE id = ?')
+      .get(id) as ConversationRow | undefined;
+    if (!row) return null;
+
+    const messageRows = this.db
+      .prepare(`
+        SELECT id, conversation_id, role, parts_json, created_at
+        FROM messages
+        WHERE conversation_id = ?
+        ORDER BY created_at ASC, id ASC
+      `)
+      .all(id) as MessageRow[];
+
+    return { ...mapConversation(row), messages: messageRows.map(mapMessage) };
+  }
+
+  insertMessage(message: Message): void {
+    this.db
+      .prepare(`
+        INSERT INTO messages (id, conversation_id, role, parts_json, created_at)
+        VALUES (@id, @conversationId, @role, @partsJson, @createdAt)
+      `)
+      .run({
+        id: message.id,
+        conversationId: message.conversationId,
+        role: message.role,
+        partsJson: JSON.stringify(message.parts),
+        createdAt: message.createdAt,
+      });
+  }
+
+  touchConversation(id: string, updatedAt: string): void {
+    this.db.prepare('UPDATE conversations SET updated_at = ? WHERE id = ?').run(updatedAt, id);
+  }
+}
 ```
 
-- [ ] **Step 5: Implement the service**
+- [ ] **Step 4: Implement the domain service**
 
-Use `crypto.randomUUID()` and ISO timestamps. The default title for a new blank conversation is `New conversation`. `appendTextMessage` rejects empty/whitespace-only text before persistence.
+`src/server/conversations/service.ts`:
 
-- [ ] **Step 6: Verify**
+```ts
+import { randomUUID } from 'node:crypto';
+import type { Conversation, ConversationSummary, Message, MessageRole } from '@/shared/conversation';
+import { ConversationRepository } from './repository';
+
+export class ConversationService {
+  constructor(
+    private readonly repository: ConversationRepository,
+    private readonly createId: () => string = randomUUID,
+    private readonly now: () => string = () => new Date().toISOString(),
+  ) {}
+
+  createConversation(title = 'New conversation'): ConversationSummary {
+    const timestamp = this.now();
+    const conversation: ConversationSummary = {
+      id: this.createId(),
+      title: title.trim() || 'New conversation',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    this.repository.createConversation(conversation);
+    return conversation;
+  }
+
+  listConversations(): ConversationSummary[] {
+    return this.repository.listConversations();
+  }
+
+  getConversation(id: string): Conversation | null {
+    return this.repository.getConversation(id);
+  }
+
+  appendTextMessage(conversationId: string, role: MessageRole, text: string): Message {
+    const normalized = text.trim();
+    if (!normalized) throw new Error('Message text cannot be empty');
+    if (!this.repository.getConversation(conversationId)) throw new Error('Conversation not found');
+
+    const createdAt = this.now();
+    const message: Message = {
+      id: this.createId(),
+      conversationId,
+      role,
+      parts: [{ type: 'text', text: normalized }],
+      createdAt,
+    };
+    this.repository.insertMessage(message);
+    this.repository.touchConversation(conversationId, createdAt);
+    return message;
+  }
+}
+```
+
+- [ ] **Step 5: Verify GREEN and commit**
 
 ```bash
 npm test -- src/server/conversations
 npm run typecheck
-```
-
-Expected: all pass.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add src/server/conversations
-git commit -m "feat: add conversation domain and repository"
+git add src/shared/conversation.ts src/server/conversations
+git commit -m "feat: add conversation domain and persistence mapping"
 ```
 
 ---
 
-### Task 4: Add provider contracts, mock streaming provider, and GPU resource serialization
+### Task 4: Add provider contracts, mock LLM, and exclusive heavy-resource leasing
 
-**Files:**
-- Create: `src/server/providers/types.ts`
-- Create: `src/server/providers/mock-llm-provider.ts`
-- Create: `src/server/providers/mock-llm-provider.test.ts`
-- Create: `src/server/resources/resource-manager.ts`
-- Create: `src/server/resources/resource-manager.test.ts`
+**Files:** `src/server/providers/*`, `src/server/resources/*`
 
-**Interfaces:**
-- Produces: `LLMProvider.stream(request): AsyncIterable<LLMStreamEvent>`
-- Produces: future-facing `ImageProvider` and `VideoProvider` contracts without concrete implementations
-- Produces: `ResourceManager.runExclusive(capability, operation)`
+**Produces:** replaceable LLM/Image/Video contracts and a FIFO lease that prevents concurrent heavy GPU workloads later.
 
-- [ ] **Step 1: Write the provider and serialization tests**
+- [ ] **Step 1: Write RED tests**
 
 Provider test:
 
 ```ts
-it('streams text deltas and then done', async () => {
+it('streams multiple deltas and then done', async () => {
   const provider = new MockLLMProvider();
   const events = [];
   for await (const event of provider.stream({ prompt: 'Hello' })) events.push(event);
@@ -630,17 +850,15 @@ it('streams text deltas and then done', async () => {
 });
 ```
 
-Resource test starts two deferred operations and asserts the second does not enter until the first releases.
-
-- [ ] **Step 2: Run tests to verify failure**
+Resource-manager test must acquire `llm`, begin an `image` acquire, assert image has not acquired yet, release LLM, then assert image acquires. Run:
 
 ```bash
 npm test -- src/server/providers src/server/resources
 ```
 
-- [ ] **Step 3: Define provider contracts**
+- [ ] **Step 2: Define provider contracts without video-to-video**
 
-`providers/types.ts`:
+`src/server/providers/types.ts`:
 
 ```ts
 export interface LLMStreamRequest {
@@ -677,136 +895,211 @@ export interface VideoProvider {
 }
 ```
 
-Do not add a `video-to-video` mode.
+- [ ] **Step 3: Implement deterministic mock streaming**
 
-- [ ] **Step 4: Implement the mock provider**
+`src/server/providers/mock-llm-provider.ts`:
 
-The mock provider returns a deterministic response such as `Local mock response: <prompt>` split into small text deltas. Before yielding each delta, check `signal?.aborted` and throw an `AbortError` using `DOMException`.
+```ts
+import type { LLMProvider, LLMStreamRequest, LLMStreamEvent } from './types';
 
-- [ ] **Step 5: Implement `ResourceManager`**
+export class MockLLMProvider implements LLMProvider {
+  readonly id = 'local-mock';
 
-Capability type:
+  async *stream(request: LLMStreamRequest): AsyncIterable<LLMStreamEvent> {
+    const response = `Local mock response: ${request.prompt}`;
+    const chunks = response.match(/.{1,8}/g) ?? [];
+
+    for (const text of chunks) {
+      if (request.signal?.aborted) throw new DOMException('Generation aborted', 'AbortError');
+      await Promise.resolve();
+      yield { type: 'text-delta', text };
+    }
+
+    if (request.signal?.aborted) throw new DOMException('Generation aborted', 'AbortError');
+    yield { type: 'done' };
+  }
+}
+```
+
+- [ ] **Step 4: Implement FIFO resource leasing**
+
+`src/server/resources/resource-manager.ts`:
 
 ```ts
 export type HeavyCapability = 'llm' | 'image' | 'video';
+
+export interface ResourceLease {
+  capability: HeavyCapability;
+  release(): void;
+}
+
+export class ResourceManager {
+  private tail: Promise<void> = Promise.resolve();
+  private active: HeavyCapability | null = null;
+
+  getActiveCapability(): HeavyCapability | null {
+    return this.active;
+  }
+
+  async acquire(capability: HeavyCapability): Promise<ResourceLease> {
+    let releaseSlot!: () => void;
+    const slot = new Promise<void>((resolve) => {
+      releaseSlot = resolve;
+    });
+
+    const previous = this.tail;
+    this.tail = previous.catch(() => undefined).then(() => slot);
+    await previous.catch(() => undefined);
+    this.active = capability;
+
+    let released = false;
+    return {
+      capability,
+      release: () => {
+        if (released) return;
+        released = true;
+        this.active = null;
+        releaseSlot();
+      },
+    };
+  }
+}
 ```
 
-Expose:
-
-```ts
-runExclusive<T>(capability: HeavyCapability, operation: () => Promise<T>): Promise<T>
-getActiveCapability(): HeavyCapability | null
-```
-
-Use one FIFO promise chain for all heavyweight capabilities. Always release in `finally`, including rejected/cancelled operations. Do not build a distributed scheduler.
-
-- [ ] **Step 6: Verify**
+- [ ] **Step 5: Verify GREEN and commit**
 
 ```bash
 npm test -- src/server/providers src/server/resources
 npm run typecheck
-```
-
-- [ ] **Step 7: Commit**
-
-```bash
 git add src/server/providers src/server/resources
 git commit -m "feat: add provider and resource manager contracts"
 ```
 
 ---
 
-### Task 5: Build the streaming chat orchestrator
+### Task 5: Build provider-independent streaming chat orchestration
 
-**Files:**
-- Create: `src/server/chat/types.ts`
-- Create: `src/server/chat/chat-orchestrator.ts`
-- Create: `src/server/chat/chat-orchestrator.test.ts`
+**Files:** `src/shared/chat.ts`, `src/server/chat/chat-orchestrator.ts`, test.
 
-**Interfaces:**
-- Consumes: `ConversationService`, `LLMProvider`, `ResourceManager`
-- Produces: `ChatOrchestrator.stream({ conversationId?, text, signal? }): AsyncIterable<ChatStreamEvent>`
+**Produces:** one async event stream that persists user/assistant messages while keeping model details outside API/UI layers.
 
-- [ ] **Step 1: Write orchestration tests**
+- [ ] **Step 1: Write RED orchestration tests**
 
-Cover all three behaviors:
+Tests must prove:
 
-1. No conversation ID -> creates one and emits its ID first.
-2. User message is persisted before provider generation; assistant message is persisted after completed streaming.
-3. Aborted generation does not persist a completed assistant message and releases the resource manager.
+- absent `conversationId` creates a conversation and emits it before deltas;
+- user message persists before provider consumption;
+- assistant message persists only after provider `done`;
+- provider abort leaves no completed assistant message;
+- lease releases on both success and abort.
 
-Use event types:
+Run:
+
+```bash
+npm test -- src/server/chat/chat-orchestrator.test.ts
+```
+
+- [ ] **Step 2: Define shared stream events**
+
+`src/shared/chat.ts`:
 
 ```ts
 export type ChatStreamEvent =
   | { type: 'conversation'; conversationId: string }
   | { type: 'delta'; text: string }
   | { type: 'done'; messageId: string };
+
+export type ChatTransportEvent =
+  | ChatStreamEvent
+  | { type: 'error'; message: string };
 ```
 
-- [ ] **Step 2: Run the failing tests**
+- [ ] **Step 3: Implement the orchestrator**
 
-```bash
-npm test -- src/server/chat/chat-orchestrator.test.ts
+`src/server/chat/chat-orchestrator.ts`:
+
+```ts
+import type { ChatStreamEvent } from '@/shared/chat';
+import { ConversationService } from '@/server/conversations/service';
+import type { LLMProvider } from '@/server/providers/types';
+import { ResourceManager } from '@/server/resources/resource-manager';
+
+export interface ChatInput {
+  conversationId?: string;
+  text: string;
+  signal?: AbortSignal;
+}
+
+export class ChatOrchestrator {
+  constructor(
+    private readonly conversations: ConversationService,
+    private readonly llm: LLMProvider,
+    private readonly resources: ResourceManager,
+  ) {}
+
+  async *stream(input: ChatInput): AsyncIterable<ChatStreamEvent> {
+    const text = input.text.trim();
+    if (!text) throw new Error('Message text cannot be empty');
+
+    let conversationId = input.conversationId;
+    if (conversationId) {
+      if (!this.conversations.getConversation(conversationId)) throw new Error('Conversation not found');
+    } else {
+      conversationId = this.conversations.createConversation().id;
+      yield { type: 'conversation', conversationId };
+    }
+
+    this.conversations.appendTextMessage(conversationId, 'user', text);
+    const lease = await this.resources.acquire('llm');
+    let assistantText = '';
+
+    try {
+      for await (const event of this.llm.stream({ prompt: text, signal: input.signal })) {
+        if (event.type === 'text-delta') {
+          assistantText += event.text;
+          yield { type: 'delta', text: event.text };
+        }
+      }
+
+      if (!assistantText.trim()) throw new Error('Provider returned an empty response');
+      const message = this.conversations.appendTextMessage(conversationId, 'assistant', assistantText);
+      yield { type: 'done', messageId: message.id };
+    } finally {
+      lease.release();
+    }
+  }
+}
 ```
 
-- [ ] **Step 3: Implement orchestration**
+Milestone 1 deliberately sends only the current prompt to the mock provider. Full multi-message context construction belongs to Milestone 2 with the real local LLM.
 
-Rules:
-
-- Reject blank input before creating/persisting anything.
-- Create a conversation when `conversationId` is absent.
-- Persist the user text as a `user` message.
-- For the mock milestone, construct the provider prompt from the current user text only. Full context construction belongs to Milestone 2 with the real LLM.
-- Wrap provider consumption inside `resourceManager.runExclusive('llm', ...)`.
-- Yield provider `text-delta` values as `{ type: 'delta' }`.
-- Concatenate deltas in the orchestration layer.
-- Persist one assistant text message only after provider completion.
-- Yield `{ type: 'done', messageId }` last.
-- Let `AbortError` propagate to the route layer; do not convert cancellation into a fake assistant message.
-
-- [ ] **Step 4: Verify**
+- [ ] **Step 4: Verify GREEN and commit**
 
 ```bash
 npm test -- src/server/chat/chat-orchestrator.test.ts
 npm run typecheck
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/server/chat
+git add src/shared/chat.ts src/server/chat/chat-orchestrator.ts src/server/chat/chat-orchestrator.test.ts
 git commit -m "feat: add streaming chat orchestration"
 ```
 
 ---
 
-### Task 6: Expose the local orchestrator through route handlers
+### Task 6: Expose health, conversations, and NDJSON chat locally
 
-**Files:**
-- Create: `src/server/app-container.ts`
-- Create: `src/app/api/health/route.ts`
-- Create: `src/app/api/conversations/route.ts`
-- Create: `src/app/api/conversations/[id]/route.ts`
-- Create: `src/app/api/chat/route.ts`
-- Create: `src/server/chat/ndjson.ts`
-- Create: `src/server/chat/ndjson.test.ts`
+**Files:** `src/server/chat/ndjson.ts`, `src/server/app-container.ts`, `src/app/api/**`, tests.
 
-**Interfaces:**
-- Produces: `GET /api/health`
-- Produces: `GET /api/conversations`
-- Produces: `POST /api/conversations`
-- Produces: `GET /api/conversations/:id`
-- Produces: `POST /api/chat` streaming `application/x-ndjson`
+**Produces:** localhost route handlers with a stable stream protocol.
 
-- [ ] **Step 1: Write the NDJSON serialization test**
+- [ ] **Step 1: Write RED NDJSON test**
+
+`src/server/chat/ndjson.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
 import { encodeNdjson } from './ndjson';
 
 describe('encodeNdjson', () => {
-  it('emits exactly one JSON object per line', () => {
+  it('encodes exactly one event per line', () => {
     expect(encodeNdjson({ type: 'delta', text: 'hello' })).toBe(
       '{"type":"delta","text":"hello"}\n',
     );
@@ -814,126 +1107,218 @@ describe('encodeNdjson', () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+Run:
 
 ```bash
 npm test -- src/server/chat/ndjson.test.ts
 ```
 
-- [ ] **Step 3: Implement the server composition root**
+- [ ] **Step 2: Implement NDJSON and the singleton app container**
 
-`app-container.ts` must lazily create one process-local container containing:
+`src/server/chat/ndjson.ts`:
 
 ```ts
-interface AppContainer {
-  conversationService: ConversationService;
-  chatOrchestrator: ChatOrchestrator;
-  resourceManager: ResourceManager;
+export function encodeNdjson(value: unknown): string {
+  return `${JSON.stringify(value)}\n`;
 }
 ```
 
-On first access:
+`src/server/app-container.ts`:
 
-1. resolve local paths
-2. `mkdirSync(dataDir, { recursive: true })`
-3. create SQLite DB
-4. run migrations
-5. create repository/service/resource manager/mock provider/orchestrator
+```ts
+import { mkdirSync } from 'node:fs';
+import { ChatOrchestrator } from '@/server/chat/chat-orchestrator';
+import { getDataPaths } from '@/server/config/paths';
+import { ConversationRepository } from '@/server/conversations/repository';
+import { ConversationService } from '@/server/conversations/service';
+import { createDatabase } from '@/server/db/database';
+import { runMigrations } from '@/server/db/migrate';
+import { MockLLMProvider } from '@/server/providers/mock-llm-provider';
+import { ResourceManager } from '@/server/resources/resource-manager';
 
-Keep this module `server-only` and never import it from client components.
+export interface AppContainer {
+  conversations: ConversationService;
+  chat: ChatOrchestrator;
+  resources: ResourceManager;
+}
 
-- [ ] **Step 4: Implement health and conversation endpoints**
+const globalState = globalThis as typeof globalThis & {
+  __unrestrictedAiContainer?: AppContainer;
+};
 
-`GET /api/health` returns:
+function createContainer(): AppContainer {
+  const paths = getDataPaths();
+  mkdirSync(paths.dataDir, { recursive: true });
+  const db = createDatabase(paths.databaseFile);
+  runMigrations(db);
 
-```json
-{
-  "status": "ok",
-  "app": "Unrestricted AI",
-  "runtime": "local"
+  const repository = new ConversationRepository(db);
+  const conversations = new ConversationService(repository);
+  const resources = new ResourceManager();
+  const llm = new MockLLMProvider();
+
+  return {
+    conversations,
+    resources,
+    chat: new ChatOrchestrator(conversations, llm, resources),
+  };
+}
+
+export function getAppContainer(): AppContainer {
+  globalState.__unrestrictedAiContainer ??= createContainer();
+  return globalState.__unrestrictedAiContainer;
 }
 ```
 
-`POST /api/conversations` takes no required body and creates a conversation. `GET /api/conversations` returns summaries newest-updated first. `GET /api/conversations/[id]` returns 404 JSON when absent.
+- [ ] **Step 3: Implement exact health and conversation handlers**
 
-- [ ] **Step 5: Implement the streaming chat route**
-
-Input shape:
+`src/app/api/health/route.ts`:
 
 ```ts
+export const runtime = 'nodejs';
+
+export function GET() {
+  return Response.json({ status: 'ok', app: 'Unrestricted AI', runtime: 'local' });
+}
+```
+
+`src/app/api/conversations/route.ts`:
+
+```ts
+import { getAppContainer } from '@/server/app-container';
+
+export const runtime = 'nodejs';
+
+export function GET() {
+  return Response.json(getAppContainer().conversations.listConversations());
+}
+
+export function POST() {
+  return Response.json(getAppContainer().conversations.createConversation(), { status: 201 });
+}
+```
+
+`src/app/api/conversations/[id]/route.ts`:
+
+```ts
+import { getAppContainer } from '@/server/app-container';
+
+export const runtime = 'nodejs';
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const { id } = await context.params;
+  const conversation = getAppContainer().conversations.getConversation(id);
+  if (!conversation) return Response.json({ error: 'Conversation not found' }, { status: 404 });
+  return Response.json(conversation);
+}
+```
+
+- [ ] **Step 4: Implement the streaming chat handler**
+
+`src/app/api/chat/route.ts`:
+
+```ts
+import type { ChatTransportEvent } from '@/shared/chat';
+import { getAppContainer } from '@/server/app-container';
+import { encodeNdjson } from '@/server/chat/ndjson';
+
+export const runtime = 'nodejs';
+
 interface ChatRequestBody {
   conversationId?: string;
   message: string;
 }
-```
 
-Validate with explicit type guards; reject invalid/blank messages with HTTP 400. Connect `request.signal` to the orchestrator.
+function isChatRequestBody(value: unknown): value is ChatRequestBody {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.message === 'string' &&
+    (record.conversationId === undefined || typeof record.conversationId === 'string')
+  );
+}
 
-Create a `ReadableStream<Uint8Array>`, iterate `chatOrchestrator.stream`, encode each event with `encodeNdjson`, and respond with headers:
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-```ts
-{
-  'Content-Type': 'application/x-ndjson; charset=utf-8',
-  'Cache-Control': 'no-store',
-  'X-Content-Type-Options': 'nosniff'
+  if (!isChatRequestBody(body) || !body.message.trim()) {
+    return Response.json({ error: 'A non-empty message is required' }, { status: 400 });
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const event of getAppContainer().chat.stream({
+          conversationId: body.conversationId,
+          text: body.message,
+          signal: request.signal,
+        })) {
+          controller.enqueue(encoder.encode(encodeNdjson(event)));
+        }
+      } catch (error: unknown) {
+        if (!(error instanceof DOMException && error.name === 'AbortError') && !request.signal.aborted) {
+          console.error(error);
+          const safeError: ChatTransportEvent = { type: 'error', message: 'Generation failed' };
+          controller.enqueue(encoder.encode(encodeNdjson(safeError)));
+        }
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
 }
 ```
 
-On an abort, close the stream without writing an error event. On another runtime error, emit one safe `{ "type": "error", "message": "Generation failed" }` line and close; detailed errors belong in server logs.
-
-- [ ] **Step 6: Verify the API boundary**
-
-Run unit checks:
+- [ ] **Step 5: Verify routes and commit**
 
 ```bash
 npm test -- src/server/chat/ndjson.test.ts
 npm run typecheck
 npm run build
-```
-
-Then start locally:
-
-```bash
 npm run dev
 ```
 
-Manual health smoke test in another terminal:
+In a second terminal:
 
 ```bash
 curl http://127.0.0.1:3000/api/health
 ```
 
-Expected JSON includes `"status":"ok"`.
-
-- [ ] **Step 7: Commit**
+Expected body contains `"status":"ok"`. Stop the dev process, then:
 
 ```bash
-git add src/server/app-container.ts src/app/api src/server/chat/ndjson.ts src/server/chat/ndjson.test.ts
+git add src/server/app-container.ts src/server/chat/ndjson.ts src/server/chat/ndjson.test.ts src/app/api
 git commit -m "feat: expose local orchestration API"
 ```
 
 ---
 
-### Task 7: Build the persistent ChatGPT-style UI shell
+### Task 7: Build the persistent chat UI and acceptance gate
 
-**Files:**
-- Create: `src/features/chat/api/chat-stream.ts`
-- Create: `src/features/chat/api/chat-stream.test.ts`
-- Create: `src/features/chat/components/Composer.tsx`
-- Create: `src/features/chat/components/MessageList.tsx`
-- Create: `src/features/chat/components/ConversationSidebar.tsx`
-- Create: `src/features/chat/components/ChatShell.tsx`
-- Create: `src/features/chat/components/ChatClient.tsx`
-- Create: `src/features/chat/components/ChatClient.test.tsx`
-- Modify: `src/app/page.tsx`
+**Files:** `src/features/chat/**`, modify `src/app/page.tsx`, create `README.md`.
 
-**Interfaces:**
-- Consumes: local `/api/conversations`, `/api/conversations/:id`, `/api/chat`
-- Produces: one responsive local assistant UI with new conversation, history, streaming text, send, and stop.
+**Produces:** one responsive Unrestricted AI interface with conversation history, streaming mock response, and stop/cancel.
 
-- [ ] **Step 1: Write the browser stream parser test**
+- [ ] **Step 1: Write RED browser-stream parsing and composer tests**
 
-`chat-stream.test.ts` should feed chunks that split a JSON line across boundaries:
+`src/features/chat/api/chat-api.test.ts` must parse deliberately split NDJSON chunks equivalent to:
 
 ```ts
 const chunks = [
@@ -943,53 +1328,222 @@ const chunks = [
 ];
 ```
 
-Assert parsed events preserve order and text.
+and assert the resulting event sequence is `conversation`, `delta`, `delta`, `done`.
 
-- [ ] **Step 2: Run it to verify failure**
+`Composer.test.tsx` must assert Send is disabled for whitespace-only input and Stop is shown when `isGenerating` is true.
+
+Run and confirm RED:
 
 ```bash
-npm test -- src/features/chat/api/chat-stream.test.ts
+npm test -- src/features/chat
 ```
 
-- [ ] **Step 3: Implement `streamChat`**
+- [ ] **Step 2: Implement exact client API helpers and strict stream parser**
 
-Expose:
+`src/features/chat/api/chat-api.ts` must export:
 
 ```ts
-export async function* streamChat(
-  input: { conversationId?: string; message: string; signal: AbortSignal },
-): AsyncIterable<ChatClientEvent>
+import type { ChatTransportEvent } from '@/shared/chat';
+import type { Conversation, ConversationSummary } from '@/shared/conversation';
+
+function isTransportEvent(value: unknown): value is ChatTransportEvent {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (record.type === 'conversation') return typeof record.conversationId === 'string';
+  if (record.type === 'delta') return typeof record.text === 'string';
+  if (record.type === 'done') return typeof record.messageId === 'string';
+  if (record.type === 'error') return typeof record.message === 'string';
+  return false;
+}
+
+export function parseNdjsonLine(line: string): ChatTransportEvent {
+  const value: unknown = JSON.parse(line);
+  if (!isTransportEvent(value)) throw new Error('Invalid chat stream event');
+  return value;
+}
+
+export async function listConversations(): Promise<ConversationSummary[]> {
+  const response = await fetch('/api/conversations', { cache: 'no-store' });
+  if (!response.ok) throw new Error('Could not load conversations');
+  return (await response.json()) as ConversationSummary[];
+}
+
+export async function getConversation(id: string): Promise<Conversation> {
+  const response = await fetch(`/api/conversations/${encodeURIComponent(id)}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Could not load conversation');
+  return (await response.json()) as Conversation;
+}
+
+export async function* streamChat(input: {
+  conversationId?: string;
+  message: string;
+  signal: AbortSignal;
+}): AsyncIterable<ChatTransportEvent> {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ conversationId: input.conversationId, message: input.message }),
+    signal: input.signal,
+  });
+  if (!response.ok || !response.body) throw new Error('Could not start generation');
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value, { stream: !done });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const event = parseNdjsonLine(line);
+        if (event.type === 'error') throw new Error(event.message);
+        yield event;
+      }
+
+      if (done) break;
+    }
+
+    if (buffer.trim()) {
+      const event = parseNdjsonLine(buffer);
+      if (event.type === 'error') throw new Error(event.message);
+      yield event;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
 ```
 
-Use `fetch('/api/chat', { method: 'POST', ... })`, read `response.body` with `TextDecoder`, buffer incomplete lines, parse only complete non-empty lines, and throw a user-safe `Error` for non-OK responses or `{ type: 'error' }` events.
+The explicit assertions from `response.json()` are allowed only at this API mapping boundary; UI components receive already typed values and do not cast API payloads.
 
-- [ ] **Step 4: Write the ChatClient behavior test**
+- [ ] **Step 3: Implement stateless MUI components**
 
-Mock `streamChat` to emit conversation -> two deltas -> done. Assert:
+`Composer.tsx` public contract:
 
-- submitted user text appears immediately
-- assistant placeholder becomes `Hello`
-- composer is disabled while generating
-- Stop button appears during generation
-- after done, composer is enabled again
+```ts
+export interface ComposerProps {
+  isGenerating: boolean;
+  onSend(text: string): void;
+  onStop(): void;
+}
+```
 
-- [ ] **Step 5: Implement focused MUI components**
+Implement with local `useState('')`, MUI `TextField`, `IconButton`, `Stack`, `SendRounded`, and `StopRounded`. Trim before `onSend`; clear only after a valid send. Enter sends; Shift+Enter keeps a newline. Send is disabled when trimmed input is empty or generation is active.
 
-Use the following ownership boundaries:
+`MessageList.tsx` contract:
 
-- `Composer`: local input state only; calls `onSend(text)`; calls `onStop()`; uses MUI `TextField`, `IconButton`, `Stack`.
-- `MessageList`: renders typed UI messages; assistant/user visual treatment only; no fetching.
-- `ConversationSidebar`: renders summaries and selection/new callbacks; no database/API mapping.
-- `ChatShell`: responsive layout only; uses `Box`, `Stack`, `Divider`; sidebar collapses below desktop width using MUI breakpoint `display` values.
-- `ChatClient`: owns conversation selection, fetching, optimistic user message, active `AbortController`, stream consumption, and refresh of summaries.
+```ts
+export interface MessageListProps {
+  messages: Message[];
+}
+```
 
-Prevent interactive child clicks from triggering container selection where relevant by calling `event.stopPropagation()`.
+Render only `text` parts. Use right-aligned contained surface for user messages and left-aligned transparent/low-emphasis assistant surface. Do not inspect provider IDs.
 
-The UI must not show `MockLLMProvider`, Qwen, llama.cpp, FLUX, or future runtime names.
+`ConversationSidebar.tsx` contract:
 
-- [ ] **Step 6: Replace the placeholder page**
+```ts
+export interface ConversationSidebarProps {
+  conversations: ConversationSummary[];
+  activeId: string | null;
+  onNew(): void;
+  onSelect(id: string): void;
+}
+```
 
-`src/app/page.tsx` becomes a thin server component:
+Use a `Button` for New conversation and `List`/`ListItemButton` for history. No fetching inside this component.
+
+`ChatShell.tsx` contract:
+
+```ts
+export interface ChatShellProps {
+  sidebar: React.ReactNode;
+  messages: React.ReactNode;
+  composer: React.ReactNode;
+}
+```
+
+Use `Box`/`Stack`; desktop sidebar width 280px and hidden on `xs`/`sm`; content column fills remaining viewport. No fixed model selector in v1.
+
+- [ ] **Step 4: Implement the stateful `ChatClient` controller**
+
+`ChatClient.tsx` must keep these states only:
+
+```ts
+const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+const [activeId, setActiveId] = useState<string | null>(null);
+const [messages, setMessages] = useState<Message[]>([]);
+const [isGenerating, setIsGenerating] = useState(false);
+const abortRef = useRef<AbortController | null>(null);
+```
+
+Required send algorithm:
+
+```ts
+async function handleSend(text: string) {
+  if (isGenerating) return;
+  const controller = new AbortController();
+  abortRef.current = controller;
+  setIsGenerating(true);
+
+  const optimisticUserId = crypto.randomUUID();
+  const optimisticAssistantId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  setMessages((current) => [
+    ...current,
+    { id: optimisticUserId, conversationId: activeId ?? 'pending', role: 'user', parts: [{ type: 'text', text }], createdAt },
+    { id: optimisticAssistantId, conversationId: activeId ?? 'pending', role: 'assistant', parts: [{ type: 'text', text: '' }], createdAt },
+  ]);
+
+  let resolvedConversationId = activeId;
+  try {
+    for await (const event of streamChat({ conversationId: activeId ?? undefined, message: text, signal: controller.signal })) {
+      if (event.type === 'conversation') {
+        resolvedConversationId = event.conversationId;
+        setActiveId(event.conversationId);
+      }
+      if (event.type === 'delta') {
+        setMessages((current) => current.map((message) =>
+          message.id === optimisticAssistantId
+            ? { ...message, parts: [{ type: 'text', text: `${message.parts[0]?.type === 'text' ? message.parts[0].text : ''}${event.text}` }] }
+            : message,
+        ));
+      }
+    }
+
+    if (resolvedConversationId) {
+      const [conversation, summaries] = await Promise.all([
+        getConversation(resolvedConversationId),
+        listConversations(),
+      ]);
+      setMessages(conversation.messages);
+      setConversations(summaries);
+    }
+  } catch (error: unknown) {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) console.error(error);
+    if (resolvedConversationId) {
+      const conversation = await getConversation(resolvedConversationId).catch(() => null);
+      if (conversation) setMessages(conversation.messages);
+    }
+  } finally {
+    abortRef.current = null;
+    setIsGenerating(false);
+  }
+}
+```
+
+On mount, call `listConversations()`. `handleSelect(id)` loads `getConversation(id)` then sets `activeId/messages`. `handleNew()` aborts any active generation, sets `activeId` to `null`, and clears messages. `handleStop()` calls `abortRef.current?.abort()`.
+
+Compose `ChatShell` with `ConversationSidebar`, `MessageList`, and `Composer`.
+
+- [ ] **Step 5: Replace the page and verify UI**
+
+`src/app/page.tsx`:
 
 ```tsx
 import { ChatClient } from '@/features/chat/components/ChatClient';
@@ -999,97 +1553,58 @@ export default function HomePage() {
 }
 ```
 
-- [ ] **Step 7: Verify UI tests and build**
+Run:
 
 ```bash
 npm test -- src/features/chat
 npm run typecheck
 npm run lint
 npm run build
+npm run dev
 ```
 
-Expected: all pass.
+Manual browser acceptance at `http://127.0.0.1:3000`:
 
-Manual check in browser at `http://127.0.0.1:3000`:
+1. send `Hello` and observe multiple streamed mock chunks;
+2. create a second conversation with New conversation;
+3. select the first conversation and see persisted history;
+4. restart the dev server and confirm history remains;
+5. send another message, press Stop during streaming, and confirm UI returns to idle without a fake persisted assistant completion.
 
-1. send `Hello`
-2. observe streamed mock assistant text
-3. create another conversation
-4. return to first conversation and see persisted history
-5. restart `npm run dev`
-6. confirm first conversation still exists
-7. send a message and press Stop while streaming; UI returns to idle without a fake completed assistant message
+- [ ] **Step 6: Add README and run the final milestone gate**
 
-- [ ] **Step 8: Commit**
+Create `README.md` containing:
+
+```md
+# Unrestricted AI
+
+Private, local-first personal AI assistant. Milestone 1 uses a mock local provider so the application architecture can be tested before multi-gigabyte model downloads are introduced.
+
+## Requirements
+
+- Windows
+- Node.js 24 LTS
+- Git
+- Visual Studio Code
+
+## Setup
 
 ```bash
-git add src/features/chat src/app/page.tsx
-git commit -m "feat: add persistent local chat interface"
+npm install
+npm run db:migrate
+npm run dev
 ```
 
----
+Open `http://127.0.0.1:3000`.
 
-### Task 8: Document local setup and run the milestone acceptance gate
+The default local paths are `./data`, `./models`, and `./outputs`. Copy `.env.example` to `.env.local` only when custom paths are required.
 
-**Files:**
-- Create: `README.md`
-- Modify only if verification finds an actual issue: files from Tasks 1-7
+Model weights, generated assets, caches, local databases, and secrets are intentionally excluded from Git.
 
-**Interfaces:**
-- Produces: repeatable Windows/VS Code startup instructions and an evidence-based Milestone 1 completion gate.
-
-- [ ] **Step 1: Write README setup instructions**
-
-README must contain exactly these concepts, with no cloud deployment instructions:
-
-1. Prerequisites: Windows, Node 24 LTS, Git, VS Code.
-2. Clone and `npm install`.
-3. Copy `.env.example` to `.env.local` only if custom local paths are needed; defaults work without it.
-4. `npm run db:migrate`.
-5. `npm run dev` and open `http://127.0.0.1:3000`.
-6. Explain that Milestone 1 intentionally uses a mock provider and downloads no AI model.
-7. State that model weights/outputs/local DBs must remain outside Git.
-8. State the branch policy: development occurs on `main` only.
-
-- [ ] **Step 2: Run the full automated gate**
-
-```bash
-npm test
-npm run typecheck
-npm run lint
-npm run build
+Development for this project stays on the `main` branch only.
 ```
 
-Expected: every command exits 0.
-
-- [ ] **Step 3: Run the persistence acceptance gate**
-
-With the dev server running:
-
-```bash
-curl http://127.0.0.1:3000/api/health
-curl -X POST http://127.0.0.1:3000/api/conversations
-```
-
-Use the browser to send a mock chat message, restart the process, and confirm history remains. This validates the design acceptance requirement: persistence across restart plus streamed response through the real provider/orchestrator boundary.
-
-- [ ] **Step 4: Inspect Git for accidental local artifacts**
-
-```bash
-git status --short
-git ls-files | grep -E '(\.gguf$|\.safetensors$|\.ckpt$|\.db$|^models/|^outputs/|^uploads/|^cache/)'
-```
-
-Expected: the second command prints nothing. `git status --short` contains only intended source/docs before commit.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add README.md
-git commit -m "docs: add local development setup"
-```
-
-- [ ] **Step 6: Final verification on `main`**
+Then run the full gate:
 
 ```bash
 git branch --show-current
@@ -1097,8 +1612,16 @@ npm test
 npm run typecheck
 npm run lint
 npm run build
+git ls-files | grep -E '(\.gguf$|\.safetensors$|\.ckpt$|\.db$|^models/|^outputs/|^uploads/|^cache/)'
 ```
 
-Expected branch: `main`; all commands exit 0.
+Expected: branch output is `main`; test/typecheck/lint/build exit 0; artifact grep prints nothing.
 
-Milestone 1 is complete only after these checks pass. Do not begin llama.cpp/Qwen integration before this gate is green.
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/features/chat src/app/page.tsx README.md
+git commit -m "feat: complete local chat foundation"
+```
+
+Milestone 1 is complete only after the full gate above is green. Do not start the llama.cpp/Qwen integration until then.
