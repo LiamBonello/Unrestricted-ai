@@ -28,8 +28,12 @@ describe('Windows local text AI workflow', () => {
     const doctor = read('scripts/text-ai-doctor.ps1');
 
     expect(doctor).toContain('function Normalize-DotEnvValue');
-    expect(doctor).toContain("Get-DotEnvValue $envFile 'UNRESTRICTED_AI_LLAMA_SERVER_PATH'");
-    expect(doctor).toContain("Get-DotEnvValue $envFile 'UNRESTRICTED_AI_LLAMA_CACHE_DIR'");
+    expect(doctor).toMatch(
+      /Get-DotEnvValue \$envfile 'UNRESTRICTED_AI_LLAMA_SERVER_PATH'/i,
+    );
+    expect(doctor).toMatch(
+      /Get-DotEnvValue \$envfile 'UNRESTRICTED_AI_LLAMA_CACHE_DIR'/i,
+    );
   });
 
   it('makes model download an explicit setup action and writes llama mode only after readiness', () => {
