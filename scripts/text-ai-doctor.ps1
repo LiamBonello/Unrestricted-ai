@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $script:FailureCount = 0
+$envFile = Join-Path (Get-Location).Path '.env.local'
 
 function Write-Pass([string]$Message) {
   Write-Host "[PASS] $Message" -ForegroundColor Green
@@ -9,6 +10,23 @@ function Write-Pass([string]$Message) {
 function Write-Fail([string]$Message) {
   $script:FailureCount += 1
   Write-Host "[FAIL] $Message" -ForegroundColor Red
+}
+
+function Normalize-DotEnvValue([string]$Value) {
+  if ($null -eq $Value) {
+    return $null
+  }
+
+  $normalized = $Value.Trim()
+  if ($normalized.Length -ge 2) {
+    $isDoubleQuoted = $normalized.StartsWith('"') -and $normalized.EndsWith('"')
+    $isSingleQuoted = $normalized.StartsWith("'") -and $normalized.EndsWith("'")
+    if ($isDoubleQuoted -or $isSingleQuoted) {
+      return $normalized.Substring(1, $normalized.Length - 2)
+    }
+  }
+
+  return $normalized
 }
 
 function Get-DotEnvValue([string]$Path, [string]$Name) {
@@ -20,15 +38,19 @@ function Get-DotEnvValue([string]$Path, [string]$Name) {
   foreach ($line in Get-Content -LiteralPath $Path) {
     $match = [Regex]::Match($line, "^\s*$escapedName\s*=\s*(.*)\s*$")
     if ($match.Success) {
-      return $match.Groups[1].Value.Trim()
+      return Normalize-DotEnvValue $match.Groups[1].Value
     }
   }
 
   return $null
 }
 
-function Resolve-LlamaServer {
+function Resolve-LlamaServer([string]$EnvFile) {
   $configured = $env:UNRESTRICTED_AI_LLAMA_SERVER_PATH
+  if ([string]::IsNullOrWhiteSpace($configured)) {
+    $configured = Get-DotEnvValue $EnvFile 'UNRESTRICTED_AI_LLAMA_SERVER_PATH'
+  }
+
   if (-not [string]::IsNullOrWhiteSpace($configured)) {
     if (Test-Path -LiteralPath $configured -PathType Leaf) {
       return (Resolve-Path -LiteralPath $configured).Path
@@ -76,14 +98,13 @@ if ($null -eq $nvidiaSmi) {
   }
 }
 
-$llamaServer = Resolve-LlamaServer
+$llamaServer = Resolve-LlamaServer $envFile
 if ($null -eq $llamaServer) {
   Write-Fail 'llama-server was not found on PATH or at UNRESTRICTED_AI_LLAMA_SERVER_PATH.'
 } else {
   Write-Pass 'llama-server is available.'
 }
 
-$envFile = Join-Path (Get-Location).Path '.env.local'
 $cacheValue = $env:UNRESTRICTED_AI_LLAMA_CACHE_DIR
 if ([string]::IsNullOrWhiteSpace($cacheValue)) {
   $cacheValue = Get-DotEnvValue $envFile 'UNRESTRICTED_AI_LLAMA_CACHE_DIR'

@@ -20,6 +20,29 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: package.json
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $hasErrors = $false
+          foreach ($file in @('scripts/text-ai-doctor.ps1', 'scripts/text-ai-setup.ps1')) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file).Path,
+              [ref]$tokens,
+              [ref]$parseErrors
+            ) | Out-Null
+
+            if ($parseErrors.Count -gt 0) {
+              $hasErrors = $true
+              Write-Host "PowerShell parse errors in $file" -ForegroundColor Red
+              $parseErrors | ForEach-Object { Write-Host $_.Message -ForegroundColor Red }
+            }
+          }
+
+          if ($hasErrors) {
+            exit 1
+          }
       - name: Install dependencies
         run: npm install
       - name: Test
