@@ -65,19 +65,21 @@ describe('ChatOrchestrator', () => {
   });
 
   it('persists the user message before provider consumption and assistant only after completion', async () => {
-    let conversations!: ConversationService;
+    const conversationsRef: { current: ConversationService | null } = { current: null };
     const provider = new InspectingProvider(() => {
+      const conversations = conversationsRef.current;
+      if (!conversations) throw new Error('Conversation service was not initialized');
       const stored = conversations.getConversation('c1');
       expect(stored?.messages).toHaveLength(1);
       expect(stored?.messages[0]).toMatchObject({ role: 'user', parts: [{ type: 'text', text: 'Hi' }] });
     });
     const harness = createHarness(provider);
-    conversations = harness.conversations;
+    conversationsRef.current = harness.conversations;
 
     const events = await collect(harness.orchestrator.stream({ text: 'Hi' }));
     expect(events.at(-1)).toEqual({ type: 'done', messageId: 'a1' });
-    expect(conversations.getConversation('c1')?.messages).toHaveLength(2);
-    expect(conversations.getConversation('c1')?.messages[1]).toMatchObject({
+    expect(harness.conversations.getConversation('c1')?.messages).toHaveLength(2);
+    expect(harness.conversations.getConversation('c1')?.messages[1]).toMatchObject({
       role: 'assistant',
       parts: [{ type: 'text', text: 'Hello there' }],
     });
