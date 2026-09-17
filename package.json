@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx src/server/db/migrate-cli.ts"
+    "db:migrate": "tsx src/server/db/migrate-cli.ts",
+    "llm:doctor": "powershell -ExecutionPolicy Bypass -File scripts/text-ai-doctor.ps1",
+    "llm:setup": "powershell -ExecutionPolicy Bypass -File scripts/text-ai-setup.ps1"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
