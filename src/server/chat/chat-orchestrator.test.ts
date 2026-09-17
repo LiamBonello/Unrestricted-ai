@@ -18,27 +18,29 @@ afterEach(() => {
 function createHarness(provider: LLMProvider) {
   db = createDatabase(':memory:');
   runMigrations(db);
-  const ids = ['c1', 'u1', 'a1'];
+  const ids = ['c1', 'u1', 'a1', 'u2', 'a2'];
   const conversations = new ConversationService(
     new ConversationRepository(db),
     () => ids.shift() ?? 'fallback-id',
     () => '2026-09-17T10:00:00.000Z',
   );
   const resources = new ResourceManager();
-  const orchestrator = new ChatOrchestrator(conversations, provider, resources);
+  const orchestrator = new ChatOrchestrator(conversations, provider, resources, 'System prompt');
   return { conversations, resources, orchestrator };
 }
 
 class InspectingProvider implements LLMProvider {
   readonly id = 'inspect';
+  readonly requests: LLMStreamRequest[] = [];
 
   constructor(
-    private readonly beforeStream?: () => void,
+    private readonly beforeStream?: (request: LLMStreamRequest) => void,
     private readonly abortAfterFirstDelta = false,
   ) {}
 
   async *stream(request: LLMStreamRequest): AsyncIterable<LLMStreamEvent> {
-    this.beforeStream?.();
+    this.requests.push(request);
+    this.beforeStream?.(request);
     yield { type: 'text-delta', text: 'Hello' };
     if (this.abortAfterFirstDelta) {
       throw new DOMException('Generation aborted', 'AbortError');
@@ -84,6 +86,22 @@ describe('ChatOrchestrator', () => {
       parts: [{ type: 'text', text: 'Hello there' }],
     });
     expect(harness.resources.getActiveCapability()).toBeNull();
+  });
+
+  it('sends the system prompt and full persisted history on later turns', async () => {
+    const provider = new InspectingProvider();
+    const { orchestrator } = createHarness(provider);
+
+    await collect(orchestrator.stream({ text: 'First' }));
+    await collect(orchestrator.stream({ conversationId: 'c1', text: 'Second' }));
+
+    expect(provider.requests).toHaveLength(2);
+    expect(provider.requests[1].messages).toEqual([
+      { role: 'system', content: 'System prompt' },
+      { role: 'user', content: 'First' },
+      { role: 'assistant', content: 'Hello there' },
+      { role: 'user', content: 'Second' },
+    ]);
   });
 
   it('does not persist a completed assistant message when the provider aborts', async () => {
