@@ -1,5 +1,12 @@
+export type LLMRole = 'system' | 'user' | 'assistant';
+
+export interface LLMMessage {
+  role: LLMRole;
+  content: string;
+}
+
 export interface LLMStreamRequest {
-  prompt: string;
+  messages: readonly LLMMessage[];
   signal?: AbortSignal;
 }
 

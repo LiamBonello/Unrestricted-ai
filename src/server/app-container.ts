@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { ChatOrchestrator } from '@/server/chat/chat-orchestrator';
+import { getAssistantConfig } from '@/server/config/assistant';
 import { getDataPaths } from '@/server/config/paths';
 import { ConversationRepository } from '@/server/conversations/repository';
 import { ConversationService } from '@/server/conversations/service';
@@ -28,11 +29,12 @@ function createContainer(): AppContainer {
   const conversations = new ConversationService(repository);
   const resources = new ResourceManager();
   const llm = new MockLLMProvider();
+  const assistant = getAssistantConfig();
 
   return {
     conversations,
     resources,
-    chat: new ChatOrchestrator(conversations, llm, resources),
+    chat: new ChatOrchestrator(conversations, llm, resources, assistant.systemPrompt),
   };
 }
 
