@@ -27,11 +27,13 @@ async function collect(stream: AsyncIterable<LLMStreamEvent>): Promise<LLMStream
 
 describe('LlamaCppProvider', () => {
   it('streams visible delta.content and sends only the provider message contract', async () => {
-    const fetchImpl = vi.fn(async () => sseResponse([
-      'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n',
-      'data: {"choices":[{"delta":{"content":" world"}}]}\n\n',
-      'data: [DONE]\n\n',
-    ]));
+    const fetchImpl = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => sseResponse([
+        'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":" world"}}]}\n\n',
+        'data: [DONE]\n\n',
+      ]),
+    );
     const provider = new LlamaCppProvider('http://127.0.0.1:8091', fetchImpl);
     const controller = new AbortController();
     const messages = [
