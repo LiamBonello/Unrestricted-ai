@@ -2,6 +2,7 @@ import path from 'node:path';
 
 export type LlmProviderMode = 'mock' | 'llama-cpp';
 export type GpuLayers = 'auto' | 'all' | number;
+export type RuntimeEnvironment = Readonly<Record<string, string | undefined>>;
 
 export interface MockLlmRuntimeConfig {
   mode: 'mock';
@@ -53,7 +54,7 @@ function parseGpuLayers(value: string | undefined): GpuLayers {
   return parsed;
 }
 
-export function getLlmRuntimeConfig(env: NodeJS.ProcessEnv = process.env): LlmRuntimeConfig {
+export function getLlmRuntimeConfig(env: RuntimeEnvironment = process.env): LlmRuntimeConfig {
   const mode = env.UNRESTRICTED_AI_LLM_PROVIDER?.trim() || 'mock';
   if (mode === 'mock') return { mode: 'mock' };
   if (mode !== 'llama-cpp') throw new Error(`Invalid LLM provider: ${mode}`);
