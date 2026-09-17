@@ -90,7 +90,7 @@ export class ConversationRepository {
         SELECT id, conversation_id, role, parts_json, created_at
         FROM messages
         WHERE conversation_id = ?
-        ORDER BY created_at ASC, id ASC
+        ORDER BY created_at ASC, rowid ASC
       `)
       .all(id) as MessageRow[];
 
