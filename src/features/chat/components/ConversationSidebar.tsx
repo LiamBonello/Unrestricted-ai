@@ -17,7 +17,7 @@ export interface ConversationSidebarProps {
 export function ConversationSidebar({ conversations, activeId, onNew, onSelect }: ConversationSidebarProps) {
   return (
     <Stack sx={{ height: '100%', p: 2 }} spacing={2}>
-      <Typography variant="h6" fontWeight={700} sx={{ px: 1 }}>
+      <Typography variant="h6" sx={{ px: 1, fontWeight: 700 }}>
         Unrestricted AI
       </Typography>
       <Button startIcon={<AddRounded />} variant="outlined" onClick={onNew} fullWidth>
@@ -33,7 +33,7 @@ export function ConversationSidebar({ conversations, activeId, onNew, onSelect }
           >
             <ListItemText
               primary={conversation.title}
-              primaryTypographyProps={{ noWrap: true }}
+              slotProps={{ primary: { noWrap: true } }}
             />
           </ListItemButton>
         ))}

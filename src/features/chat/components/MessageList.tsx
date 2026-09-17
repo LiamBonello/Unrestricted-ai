@@ -11,9 +11,9 @@ export function MessageList({ messages }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <Box sx={{ minHeight: '100%', display: 'grid', placeItems: 'center', px: 3 }}>
-        <Stack spacing={1} alignItems="center">
-          <Typography variant="h4" fontWeight={600}>Unrestricted AI</Typography>
-          <Typography color="text.secondary" textAlign="center">
+        <Stack spacing={1} sx={{ alignItems: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 600 }}>Unrestricted AI</Typography>
+          <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
             Your private, local-first AI assistant.
           </Typography>
         </Stack>
