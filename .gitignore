@@ -1,0 +1,17 @@
+node_modules/
+.next/
+coverage/
+.env
+.env.*
+!.env.example
+models/
+outputs/
+uploads/
+cache/
+data/*.db
+data/*.db-*
+*.gguf
+*.safetensors
+*.ckpt
+*.pt
+*.pth

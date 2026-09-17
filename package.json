@@ -1,0 +1,43 @@
+{
+  "name": "unrestricted-ai",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "tsx src/server/db/migrate-cli.ts"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "9.4.0",
+    "@mui/material": "9.4.0",
+    "@mui/material-nextjs": "9.4.0",
+    "better-sqlite3": "13.0.3",
+    "next": "16.3.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "16.3.3",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.3.3",
+    "jsdom": "^27.0.0",
+    "tsx": "4.23.13",
+    "typescript": "^5.9.0",
+    "vitest": "5.0.1"
+  }
+}
