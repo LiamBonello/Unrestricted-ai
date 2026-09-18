@@ -1,3 +1,5 @@
+import type { ImagePart } from './image';
+
 export type MessageRole = 'user' | 'assistant';
 
 export interface TextPart {
@@ -5,7 +7,7 @@ export interface TextPart {
   text: string;
 }
 
-export type MessagePart = TextPart;
+export type MessagePart = TextPart | ImagePart;
 
 export interface Message {
   id: string;

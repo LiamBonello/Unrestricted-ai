@@ -1,8 +1,9 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { initialMigration } from './migrations/0001-initial';
+import { imageAssetsMigration } from './migrations/0002-image-assets';
 import type { Migration } from './migrations/types';
 
-const migrations: readonly Migration[] = [initialMigration];
+const migrations: readonly Migration[] = [initialMigration, imageAssetsMigration];
 
 export function runMigrations(db: DatabaseSync): void {
   db.exec(`

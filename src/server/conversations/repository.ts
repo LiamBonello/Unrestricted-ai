@@ -29,9 +29,20 @@ function isTextPart(value: unknown): value is TextPart {
   return candidate.type === 'text' && typeof candidate.text === 'string';
 }
 
+function isImagePart(value: unknown): value is Extract<MessagePart, { type: 'image' }> {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.type === 'image'
+    && typeof candidate.assetId === 'string'
+    && candidate.assetId.length > 0
+    && typeof candidate.alt === 'string'
+  );
+}
+
 function parseParts(value: string): MessagePart[] {
   const parsed: unknown = JSON.parse(value);
-  if (!Array.isArray(parsed) || !parsed.every(isTextPart)) {
+  if (!Array.isArray(parsed) || !parsed.every((part) => isTextPart(part) || isImagePart(part))) {
     throw new Error('Stored message parts are invalid');
   }
   return parsed;
