@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
 import { createDatabase } from '@/server/db/database';
+import type { ComfyUiSpawnProcess } from '@/server/providers/comfyui/types';
 import type {
   ManagedChildProcess,
   SpawnProcess,
@@ -121,4 +122,69 @@ describe('createAppContainer', () => {
     lease.release();
     await container.resources.unloadResident();
   });
+
+  it('registers ComfyUI lazily and exposes only safe image runtime diagnostics', async () => {
+    let spawnCount = 0;
+    const spawnProcess: ComfyUiSpawnProcess = () => {
+      spawnCount += 1;
+      return new FakeChildProcess();
+    };
+
+    const imageConfig = {
+      mode: 'comfyui' as const,
+      rootDir: 'C:\\private\\ComfyUI_windows_portable',
+      pythonPath: 'C:\\private\\ComfyUI_windows_portable\\python_embeded\\python.exe',
+      mainPath: 'C:\\private\\ComfyUI_windows_portable\\ComfyUI\\main.py',
+      host: '127.0.0.1' as const,
+      port: 8188,
+      startupTimeoutMs: 180000,
+      outputsDir: 'C:\\private\\outputs',
+      uploadsDir: 'C:\\private\\uploads',
+      generalProfile: 'flux2-klein-4b-fp8' as const,
+      adultCheckpoint: null,
+      baseUrl: 'http://127.0.0.1:8188',
+    };
+
+    const container = createAppContainer(
+      { mode: 'mock' },
+      {
+        database: memoryDatabase(),
+        assistantConfig: { systemPrompt: 'System test prompt' },
+        imageRuntimeConfig: imageConfig,
+        comfyUiServerDependencies: {
+          spawnProcess,
+          fetch: async () => Response.json({ system: {} }),
+          now: () => 0,
+          sleep: async () => undefined,
+        },
+      },
+    );
+
+    expect(spawnCount).toBe(0);
+    expect(container.imageRuntime.getStatus()).toEqual({
+      mode: 'comfyui',
+      configured: true,
+      status: 'stopped',
+      residentCapability: null,
+      profile: 'flux2-klein-4b-fp8',
+      baseUrl: 'http://127.0.0.1:8188',
+    });
+
+    const lease = await container.resources.acquire('image');
+
+    expect(spawnCount).toBe(1);
+    expect(container.imageRuntime.getStatus()).toEqual({
+      mode: 'comfyui',
+      configured: true,
+      status: 'ready',
+      residentCapability: 'image',
+      profile: 'flux2-klein-4b-fp8',
+      baseUrl: 'http://127.0.0.1:8188',
+    });
+    expect(JSON.stringify(container.imageRuntime.getStatus())).not.toContain('C:\\private');
+
+    lease.release();
+    await container.resources.unloadResident();
+  });
+
 });
