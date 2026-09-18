@@ -109,7 +109,11 @@ try {
   }
 
   $serverPathForEnv = $llamaServer.Replace('"', '\"')
-  $cachePathForEnv = $cacheFullPath.Replace('"', '\"')
+  $cachePathForEnv = if ([System.IO.Path]::IsPathRooted($CacheDir)) {
+    $cacheFullPath.Replace('"', '\"')
+  } else {
+    $CacheDir.Replace('\\', '/').Replace('"', '\"')
+  }
   $envContent = @"
 UNRESTRICTED_AI_LLM_PROVIDER=llama-cpp
 UNRESTRICTED_AI_LLAMA_SERVER_PATH="$serverPathForEnv"

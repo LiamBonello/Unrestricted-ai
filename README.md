@@ -69,6 +69,8 @@ This is the explicit setup action that is allowed to access Hugging Face and pop
 
 The normal Unrestricted AI runtime then starts `llama-server` with `--offline`. If the configured model is missing from cache, normal startup fails instead of silently downloading model weights.
 
+By default, setup stores the model cache as a repository-relative path (`./models/llama-cache`) in `.env.local`. This keeps the local configuration portable if the repository is moved to another folder on the same PC.
+
 To use the 4B fallback during setup:
 
 ```powershell
