@@ -1,10 +1,10 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDatabase } from '@/server/db/database';
 import { runMigrations } from '@/server/db/migrate';
 import { ConversationRepository } from './repository';
 
-let db: Database.Database;
+let db: DatabaseSync;
 let repository: ConversationRepository;
 
 beforeEach(() => {

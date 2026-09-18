@@ -1,8 +1,8 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 
-export function createDatabase(filename: string): Database.Database {
-  const db = new Database(filename);
-  db.pragma('foreign_keys = ON');
-  if (filename !== ':memory:') db.pragma('journal_mode = WAL');
+export function createDatabase(filename: string): DatabaseSync {
+  const db = new DatabaseSync(filename);
+  db.exec('PRAGMA foreign_keys = ON');
+  if (filename !== ':memory:') db.exec('PRAGMA journal_mode = WAL');
   return db;
 }

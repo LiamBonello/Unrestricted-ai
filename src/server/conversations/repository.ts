@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import type {
   Conversation,
   ConversationSummary,
@@ -57,7 +57,7 @@ function mapMessage(row: MessageRow): Message {
 }
 
 export class ConversationRepository {
-  constructor(private readonly db: Database.Database) {}
+  constructor(private readonly db: DatabaseSync) {}
 
   createConversation(conversation: ConversationSummary): void {
     this.db

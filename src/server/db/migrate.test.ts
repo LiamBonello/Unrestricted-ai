@@ -1,9 +1,9 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createDatabase } from './database';
 import { runMigrations } from './migrate';
 
-let db: Database.Database | undefined;
+let db: DatabaseSync | undefined;
 
 afterEach(() => {
   db?.close();

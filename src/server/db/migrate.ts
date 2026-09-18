@@ -1,10 +1,10 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import { initialMigration } from './migrations/0001-initial';
 import type { Migration } from './migrations/types';
 
 const migrations: readonly Migration[] = [initialMigration];
 
-export function runMigrations(db: Database.Database): void {
+export function runMigrations(db: DatabaseSync): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       version INTEGER PRIMARY KEY,
@@ -13,18 +13,25 @@ export function runMigrations(db: Database.Database): void {
     );
   `);
 
-  const appliedRows = db.prepare('SELECT version FROM schema_migrations').all() as Array<{ version: number }>;
+  const appliedRows = db.prepare('SELECT version FROM schema_migrations').all() as Array<{
+    version: number;
+  }>;
   const applied = new Set(appliedRows.map(({ version }) => version));
   const insert = db.prepare(
     'INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)',
   );
 
-  const apply = db.transaction((migration: Migration) => {
-    db.exec(migration.sql);
-    insert.run(migration.version, migration.name, new Date().toISOString());
-  });
-
   for (const migration of migrations) {
-    if (!applied.has(migration.version)) apply(migration);
+    if (applied.has(migration.version)) continue;
+
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec(migration.sql);
+      insert.run(migration.version, migration.name, new Date().toISOString());
+      db.exec('COMMIT');
+    } catch (error) {
+      if (db.isTransaction) db.exec('ROLLBACK');
+      throw error;
+    }
   }
 }
