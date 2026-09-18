@@ -21,12 +21,25 @@ export interface LLMProvider {
 
 export interface ImageGenerationRequest {
   prompt: string;
-  inputImagePath?: string;
+  contentMode: 'general' | 'adult-explicit';
+  width: number;
+  height: number;
+  seed: number;
+  input?: {
+    bytes: Uint8Array;
+    mimeType: 'image/png' | 'image/jpeg' | 'image/webp';
+  };
+  signal?: AbortSignal;
+}
+
+export interface ImageGenerationResult {
+  bytes: Uint8Array;
+  mimeType: 'image/png' | 'image/jpeg' | 'image/webp';
 }
 
 export interface ImageProvider {
   readonly id: string;
-  generate(request: ImageGenerationRequest): Promise<{ outputPath: string }>;
+  generate(request: ImageGenerationRequest): Promise<ImageGenerationResult>;
 }
 
 export type VideoGenerationRequest =

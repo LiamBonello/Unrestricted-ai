@@ -46,4 +46,31 @@ export class ConversationService {
     this.repository.touchConversation(conversationId, createdAt);
     return message;
   }
+
+  appendImageMessage(
+    conversationId: string,
+    role: MessageRole,
+    assetId: string,
+    alt = 'Generated image',
+  ): Message {
+    const normalizedAssetId = assetId.trim();
+    if (!normalizedAssetId) throw new Error('Image asset ID cannot be empty');
+    if (!this.repository.getConversation(conversationId)) throw new Error('Conversation not found');
+
+    const createdAt = this.now();
+    const message: Message = {
+      id: this.createId(),
+      conversationId,
+      role,
+      parts: [{
+        type: 'image',
+        assetId: normalizedAssetId,
+        alt: alt.trim() || 'Generated image',
+      }],
+      createdAt,
+    };
+    this.repository.insertMessage(message);
+    this.repository.touchConversation(conversationId, createdAt);
+    return message;
+  }
 }
