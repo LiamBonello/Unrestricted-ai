@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from 'vitest';
 import { POST as uploadImage } from '@/app/api/uploads/images/route';
 import { GET } from './route';
