@@ -21,10 +21,10 @@ describe('runMigrations', () => {
       .all() as Array<{ name: string }>;
 
     expect(tables.map(({ name }) => name)).toEqual(
-      expect.arrayContaining(['schema_migrations', 'conversations', 'messages']),
+      expect.arrayContaining(['schema_migrations', 'conversations', 'messages', 'assets']),
     );
 
     const row = db.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get() as { count: number };
-    expect(row.count).toBe(1);
+    expect(row.count).toBe(2);
   });
 });

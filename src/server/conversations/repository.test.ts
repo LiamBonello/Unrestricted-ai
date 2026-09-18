@@ -46,4 +46,25 @@ describe('ConversationRepository', () => {
       expect.objectContaining({ role: 'assistant', parts: [{ type: 'text', text: 'Hi' }] }),
     ]);
   });
+  it('round-trips image message parts without exposing storage paths', () => {
+    repository.createConversation({
+      id: 'c-image',
+      title: 'Image test',
+      createdAt: '2026-09-18T10:00:00.000Z',
+      updatedAt: '2026-09-18T10:00:00.000Z',
+    });
+
+    repository.insertMessage({
+      id: 'm-image',
+      conversationId: 'c-image',
+      role: 'assistant',
+      parts: [{ type: 'image', assetId: 'asset-1', alt: 'Generated image' }],
+      createdAt: '2026-09-18T10:00:01.000Z',
+    });
+
+    expect(repository.getConversation('c-image')?.messages[0]?.parts).toEqual([
+      { type: 'image', assetId: 'asset-1', alt: 'Generated image' },
+    ]);
+  });
+
 });
