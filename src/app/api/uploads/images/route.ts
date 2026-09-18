@@ -5,6 +5,22 @@ export const runtime = 'nodejs';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
+interface UploadedImageFile {
+  type: string;
+  size: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+function isUploadedImageFile(value: FormDataEntryValue | null): value is FormDataEntryValue & UploadedImageFile {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as unknown as Record<string, unknown>;
+  return (
+    typeof candidate.type === 'string'
+    && typeof candidate.size === 'number'
+    && typeof candidate.arrayBuffer === 'function'
+  );
+}
+
 export async function POST(request: Request) {
   let form: FormData;
   try {
@@ -14,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const image = form.get('image');
-  if (!(image instanceof File)) {
+  if (!isUploadedImageFile(image)) {
     return Response.json({ error: 'An image file is required' }, { status: 400 });
   }
   if (!isImageMimeType(image.type)) {
