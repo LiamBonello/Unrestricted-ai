@@ -28,3 +28,10 @@ export interface ComfyUiServerDependencies {
   now: () => number;
   sleep: (ms: number) => Promise<void>;
 }
+
+export interface ComfyWorkflowNode {
+  class_type: string;
+  inputs: Record<string, unknown>;
+}
+
+export type ComfyWorkflow = Record<string, ComfyWorkflowNode>;
