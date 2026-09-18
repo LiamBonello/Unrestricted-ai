@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ConversationRepository } from '@/server/conversations/repository';
 import { ConversationService } from '@/server/conversations/service';
@@ -8,7 +8,7 @@ import type { LLMProvider, LLMStreamRequest, LLMStreamEvent } from '@/server/pro
 import { ResourceManager } from '@/server/resources/resource-manager';
 import { ChatOrchestrator } from './chat-orchestrator';
 
-let db: Database.Database | undefined;
+let db: DatabaseSync | undefined;
 
 afterEach(() => {
   db?.close();

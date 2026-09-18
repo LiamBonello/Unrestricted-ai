@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import { createDatabase } from '@/server/db/database';
 import type {
   ManagedChildProcess,
@@ -27,9 +27,9 @@ class FakeChildProcess implements ManagedChildProcess {
   }
 }
 
-const openDatabases: Database.Database[] = [];
+const openDatabases: DatabaseSync[] = [];
 
-function memoryDatabase(): Database.Database {
+function memoryDatabase(): DatabaseSync {
   const db = createDatabase(':memory:');
   openDatabases.push(db);
   return db;

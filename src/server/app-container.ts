@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs';
-import type Database from 'better-sqlite3';
+import type { DatabaseSync } from 'node:sqlite';
 import { ChatOrchestrator } from '@/server/chat/chat-orchestrator';
 import { getAssistantConfig, type AssistantConfig } from '@/server/config/assistant';
 import {
@@ -31,7 +31,7 @@ export interface AppContainer {
 }
 
 export interface AppContainerDependencies {
-  database?: Database.Database;
+  database?: DatabaseSync;
   assistantConfig?: AssistantConfig;
   llamaServerDependencies?: LlamaCppServerDependencies;
   llamaFetch?: typeof fetch;
@@ -41,7 +41,7 @@ const globalState = globalThis as typeof globalThis & {
   __unrestrictedAiContainer?: AppContainer;
 };
 
-function createProductionDatabase(): Database.Database {
+function createProductionDatabase(): DatabaseSync {
   const paths = getDataPaths();
   mkdirSync(paths.dataDir, { recursive: true });
   return createDatabase(paths.databaseFile);

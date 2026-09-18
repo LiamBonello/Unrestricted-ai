@@ -65,7 +65,12 @@ export class ConversationRepository {
         INSERT INTO conversations (id, title, created_at, updated_at)
         VALUES (@id, @title, @createdAt, @updatedAt)
       `)
-      .run(conversation);
+      .run({
+        id: conversation.id,
+        title: conversation.title,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      });
   }
 
   listConversations(): ConversationSummary[] {
@@ -75,14 +80,14 @@ export class ConversationRepository {
         FROM conversations
         ORDER BY updated_at DESC, id DESC
       `)
-      .all() as ConversationRow[];
+      .all() as unknown as ConversationRow[];
     return rows.map(mapConversation);
   }
 
   getConversation(id: string): Conversation | null {
     const row = this.db
       .prepare('SELECT id, title, created_at, updated_at FROM conversations WHERE id = ?')
-      .get(id) as ConversationRow | undefined;
+      .get(id) as unknown as ConversationRow | undefined;
     if (!row) return null;
 
     const messageRows = this.db
@@ -92,7 +97,7 @@ export class ConversationRepository {
         WHERE conversation_id = ?
         ORDER BY created_at ASC, rowid ASC
       `)
-      .all(id) as MessageRow[];
+      .all(id) as unknown as MessageRow[];
 
     return { ...mapConversation(row), messages: messageRows.map(mapMessage) };
   }
