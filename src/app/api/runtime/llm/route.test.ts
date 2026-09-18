@@ -4,6 +4,7 @@ import { GET } from './route';
 describe('GET /api/runtime/llm', () => {
   it('returns safe diagnostics without filesystem paths or environment variables', async () => {
     delete process.env.UNRESTRICTED_AI_LLM_PROVIDER;
+    process.env.UNRESTRICTED_AI_DATA_DIR = `./data/test-llm-runtime-${process.pid}`;
 
     const response = await GET();
     const body: unknown = await response.json();

@@ -4,6 +4,7 @@ import { GET } from './route';
 describe('GET /api/runtime/image', () => {
   it('returns safe mock diagnostics without filesystem paths or environment variables', async () => {
     delete process.env.UNRESTRICTED_AI_IMAGE_PROVIDER;
+    process.env.UNRESTRICTED_AI_DATA_DIR = `./data/test-image-runtime-${process.pid}`;
 
     const response = await GET();
     const body: unknown = await response.json();
