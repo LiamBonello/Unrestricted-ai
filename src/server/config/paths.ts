@@ -11,5 +11,6 @@ export function getDataPaths() {
     databaseFile: path.join(dataDir, 'unrestricted-ai.db'),
     modelsDir: resolveLocalPath(process.env.UNRESTRICTED_AI_MODELS_DIR, './models'),
     outputsDir: resolveLocalPath(process.env.UNRESTRICTED_AI_OUTPUTS_DIR, './outputs'),
+    uploadsDir: resolveLocalPath(process.env.UNRESTRICTED_AI_UPLOADS_DIR, './uploads'),
   } as const;
 }
