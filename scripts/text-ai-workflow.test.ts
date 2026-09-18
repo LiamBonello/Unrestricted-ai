@@ -58,6 +58,15 @@ describe('Windows local text AI workflow', () => {
     expect(setup).toContain('UNRESTRICTED_AI_LLM_PROVIDER=llama-cpp');
   });
 
+  it('writes a portable relative llama cache path to dotenv when setup receives one', () => {
+    const setup = read('scripts/text-ai-setup.ps1');
+
+    expect(setup).toContain('IsPathRooted($CacheDir)');
+    expect(setup).toContain('$cachePathForEnv');
+    expect(setup).toContain('UNRESTRICTED_AI_LLAMA_CACHE_DIR="$cachePathForEnv"');
+    expect(setup).not.toContain('UNRESTRICTED_AI_LLAMA_CACHE_DIR="$cacheFullPath"');
+  });
+
   it('exposes npm helpers for doctor and explicit setup', () => {
     const packageJson = JSON.parse(read('package.json')) as {
       scripts?: Record<string, string>;
