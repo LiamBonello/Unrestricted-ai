@@ -28,7 +28,7 @@ describe('GET /api/assets/[id]', () => {
       status: 201,
       body: expect.objectContaining({ assetId: expect.any(String) }),
     });
-    const assetId = String(assetId);
+    const assetId = String(uploaded.assetId);
 
     const response = await GET(
       new Request(`http://127.0.0.1:3000/api/assets/${assetId}`),
