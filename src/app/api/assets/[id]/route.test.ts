@@ -21,11 +21,16 @@ describe('GET /api/assets/[id]', () => {
       'http://127.0.0.1:3000/api/uploads/images',
       { method: 'POST', body: form },
     ));
-    const uploaded = await uploadResponse.json() as { assetId: string };
+    const uploaded = await uploadResponse.json() as Record<string, unknown>;
+    expect({ status: uploadResponse.status, body: uploaded }).toEqual({
+      status: 201,
+      body: expect.objectContaining({ assetId: expect.any(String) }),
+    });
+    const assetId = String(assetId);
 
     const response = await GET(
-      new Request(`http://127.0.0.1:3000/api/assets/${uploaded.assetId}`),
-      { params: Promise.resolve({ id: uploaded.assetId }) },
+      new Request(`http://127.0.0.1:3000/api/assets/${assetId}`),
+      { params: Promise.resolve({ id: assetId }) },
     );
 
     expect(response.status).toBe(200);

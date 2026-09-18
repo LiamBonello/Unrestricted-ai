@@ -23,9 +23,13 @@ describe('POST /api/uploads/images', () => {
     ));
     const body = await response.json() as Record<string, unknown>;
 
-    expect(response.status).toBe(201);
-    expect(body.assetId).toEqual(expect.any(String));
-    expect(body.conversationId).toEqual(expect.any(String));
+    expect({ status: response.status, body }).toEqual({
+      status: 201,
+      body: expect.objectContaining({
+        assetId: expect.any(String),
+        conversationId: expect.any(String),
+      }),
+    });
     expect(JSON.stringify(body)).not.toContain('user-controlled-name.png');
     expect(JSON.stringify(body)).not.toContain(process.cwd());
   });
